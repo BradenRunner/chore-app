@@ -1233,6 +1233,72 @@ body {
   background: #dc2626;
 }
 
+.dash-layout .schedule-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dash-layout .schedule-item-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dash-layout .schedule-msg-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.dash-layout .schedule-msg-edit label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.dash-layout .schedule-msg-edit input {
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: #fff;
+}
+
+.dash-layout .schedule-msg-edit input:focus {
+  border-color: #3b82f6;
+  outline: none;
+}
+
+.dash-layout .schedule-msg-hint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #94a3b8;
+}
+
+.dash-layout .schedule-msg-edit button {
+  align-self: flex-start;
+  padding: 6px 16px;
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.dash-layout .schedule-msg-edit button:hover {
+  background: #2563eb;
+}
+
 .dash-layout .dash-add-form select {
   padding: 10px 14px;
   border: 1px solid #e2e8f0;

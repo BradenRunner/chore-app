@@ -50,7 +50,7 @@ app.prepare().then(() => {
       }
 
       console.log(`  ${incomplete.length} person(s) need reminders...`);
-      const results = await remindSlackers(status);
+      const results = await remindSlackers(status, match.title, match.body);
 
       for (const r of results) {
         console.log(`  Notified ${r.name}: ${r.notified ? 'success' : 'FAILED'}`);

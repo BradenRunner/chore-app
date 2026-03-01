@@ -25,6 +25,8 @@ export default function Dashboard() {
   const [schedHour, setSchedHour] = useState('6');
   const [schedMinute, setSchedMinute] = useState('00');
   const [schedAmPm, setSchedAmPm] = useState('PM');
+  const [expandedSchedule, setExpandedSchedule] = useState(null);
+  const [schedMsgEdits, setSchedMsgEdits] = useState({});
 
   async function fetchAll() {
     const [statusRes, choresRes, peopleRes, historyRes, rewardsRes, punishRes, schedRes] = await Promise.all([
@@ -216,6 +218,29 @@ export default function Dashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
+    setExpandedSchedule(null);
+    fetchAll();
+  }
+
+  function handleToggleScheduleExpand(s) {
+    if (expandedSchedule === s.id) {
+      setExpandedSchedule(null);
+    } else {
+      setExpandedSchedule(s.id);
+      setSchedMsgEdits({
+        title: s.title || 'Chore Reminder',
+        body: s.body || 'Hey {name}, you haven\'t logged a chore today!',
+      });
+    }
+  }
+
+  async function handleSaveScheduleMessage(id) {
+    await fetch('/api/notification-schedule', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, title: schedMsgEdits.title, body: schedMsgEdits.body }),
+    });
+    setExpandedSchedule(null);
     fetchAll();
   }
 
@@ -438,12 +463,42 @@ export default function Dashboard() {
           {/* Notification Schedule */}
           <section className="dash-section">
             <h2>Notification Schedule</h2>
-            <div className="dash-list" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            <div className="dash-list">
               {schedule.map((s) => (
-                <span key={s.id} className="schedule-badge">
-                  {formatTime12(s.time)}
-                  <button className="schedule-badge-x" onClick={() => handleDeleteScheduleTime(s.id)}>&times;</button>
-                </span>
+                <div key={s.id} className="schedule-item">
+                  <div className="schedule-item-header">
+                    <span
+                      className="schedule-badge"
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleToggleScheduleExpand(s)}
+                    >
+                      {formatTime12(s.time)}
+                    </span>
+                    <button className="dash-delete-btn" onClick={() => handleDeleteScheduleTime(s.id)}>Remove</button>
+                  </div>
+                  {expandedSchedule === s.id && (
+                    <div className="schedule-msg-edit">
+                      <label>
+                        Title
+                        <input
+                          type="text"
+                          value={schedMsgEdits.title || ''}
+                          onChange={(e) => setSchedMsgEdits((prev) => ({ ...prev, title: e.target.value }))}
+                        />
+                      </label>
+                      <label>
+                        Body
+                        <input
+                          type="text"
+                          value={schedMsgEdits.body || ''}
+                          onChange={(e) => setSchedMsgEdits((prev) => ({ ...prev, body: e.target.value }))}
+                        />
+                        <span className="schedule-msg-hint">Use &#123;name&#125; for the person&apos;s name</span>
+                      </label>
+                      <button onClick={() => handleSaveScheduleMessage(s.id)}>Save</button>
+                    </div>
+                  )}
+                </div>
               ))}
               {schedule.length === 0 && (
                 <span style={{ color: '#64748b', fontSize: '0.9rem' }}>No notification times configured</span>

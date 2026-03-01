@@ -40,7 +40,7 @@ export async function GET(request) {
     return NextResponse.json({ message: 'Everyone done!', reminded: 0 });
   }
 
-  const results = await remindSlackers(status);
+  const results = await remindSlackers(status, match.title, match.body);
   await markNotificationSent(currentSlot, today, results.length);
 
   return NextResponse.json({
