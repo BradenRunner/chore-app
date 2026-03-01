@@ -1,42 +1,42 @@
 import { NextResponse } from 'next/server';
+import { getAllPeople, addPerson, updatePerson, deletePerson } from '@/lib/db';
 
 export async function GET() {
-  const { getAllPeople } = require('@/lib/db');
-  return NextResponse.json(getAllPeople());
+  const people = await getAllPeople();
+  // Strip pin from response for security
+  const safe = people.map(({ pin, ...rest }) => rest);
+  return NextResponse.json(safe);
 }
 
 export async function POST(request) {
-  const { addPerson } = require('@/lib/db');
-  const { name } = await request.json();
+  const { name, pin } = await request.json();
 
   if (!name?.trim()) {
     return NextResponse.json({ error: 'name is required' }, { status: 400 });
   }
 
-  addPerson(name.trim());
+  await addPerson(name.trim(), pin || undefined);
   return NextResponse.json({ success: true });
 }
 
 export async function PUT(request) {
-  const { updatePerson } = require('@/lib/db');
-  const { id, name, ntfy_topic } = await request.json();
+  const { id, name, ntfy_topic, pin } = await request.json();
 
   if (!id) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 });
   }
 
-  updatePerson(id, { name, ntfy_topic });
+  await updatePerson(id, { name, ntfy_topic, pin });
   return NextResponse.json({ success: true });
 }
 
 export async function DELETE(request) {
-  const { deletePerson } = require('@/lib/db');
   const { id } = await request.json();
 
   if (!id) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 });
   }
 
-  deletePerson(id);
+  await deletePerson(id);
   return NextResponse.json({ success: true });
 }

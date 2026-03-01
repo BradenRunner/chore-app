@@ -7,38 +7,53 @@ export default function Dashboard() {
   const [chores, setChores] = useState([]);
   const [people, setPeople] = useState([]);
   const [history, setHistory] = useState([]);
+  const [rewards, setRewards] = useState([]);
+  const [punishmentItems, setPunishmentItems] = useState([]);
   const [newChore, setNewChore] = useState('');
+  const [newChoreTokens, setNewChoreTokens] = useState('1');
   const [newPerson, setNewPerson] = useState('');
   const [newPersonPin, setNewPersonPin] = useState('');
   const [editingPerson, setEditingPerson] = useState(null);
+  const [newRewardName, setNewRewardName] = useState('');
+  const [newRewardCost, setNewRewardCost] = useState('');
+  const [newPunishName, setNewPunishName] = useState('');
+  const [newPunishDeduction, setNewPunishDeduction] = useState('0');
+  // Inline token editors: { [choreId]: value }
+  const [tokenEdits, setTokenEdits] = useState({});
 
   async function fetchAll() {
-    const [statusRes, choresRes, peopleRes, historyRes] = await Promise.all([
+    const [statusRes, choresRes, peopleRes, historyRes, rewardsRes, punishRes] = await Promise.all([
       fetch('/api/status'),
       fetch('/api/chores'),
       fetch('/api/people'),
       fetch('/api/history?days=14'),
+      fetch('/api/rewards'),
+      fetch('/api/punishment-items'),
     ]);
     setStatus(await statusRes.json());
     setChores(await choresRes.json());
     setPeople(await peopleRes.json());
     const historyData = await historyRes.json();
     setHistory(historyData.history);
+    setRewards(await rewardsRes.json());
+    setPunishmentItems(await punishRes.json());
   }
 
   useEffect(() => {
     fetchAll();
   }, []);
 
+  // Chore handlers
   async function handleAddChore(e) {
     e.preventDefault();
     if (!newChore.trim()) return;
     await fetch('/api/chores', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newChore.trim() }),
+      body: JSON.stringify({ name: newChore.trim(), token_value: Number(newChoreTokens) || 1 }),
     });
     setNewChore('');
+    setNewChoreTokens('1');
     fetchAll();
   }
 
@@ -51,6 +66,23 @@ export default function Dashboard() {
     fetchAll();
   }
 
+  async function handleUpdateTokenValue(choreId) {
+    const val = tokenEdits[choreId];
+    if (val === undefined) return;
+    await fetch('/api/chores', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: choreId, token_value: Number(val) }),
+    });
+    setTokenEdits((prev) => {
+      const next = { ...prev };
+      delete next[choreId];
+      return next;
+    });
+    fetchAll();
+  }
+
+  // People handlers
   async function handleAddPerson(e) {
     e.preventDefault();
     if (!newPerson.trim()) return;
@@ -89,6 +121,55 @@ export default function Dashboard() {
 
   async function handleDeleteCompletion(id) {
     await fetch('/api/complete', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    fetchAll();
+  }
+
+  // Rewards handlers
+  async function handleAddReward(e) {
+    e.preventDefault();
+    if (!newRewardName.trim() || !newRewardCost) return;
+    await fetch('/api/rewards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newRewardName.trim(), token_cost: Number(newRewardCost) }),
+    });
+    setNewRewardName('');
+    setNewRewardCost('');
+    fetchAll();
+  }
+
+  async function handleDeleteReward(id) {
+    await fetch('/api/rewards', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    fetchAll();
+  }
+
+  // Punishment item handlers
+  async function handleAddPunishment(e) {
+    e.preventDefault();
+    if (!newPunishName.trim()) return;
+    await fetch('/api/punishment-items', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: newPunishName.trim(),
+        token_deduction: Number(newPunishDeduction) || 0,
+      }),
+    });
+    setNewPunishName('');
+    setNewPunishDeduction('0');
+    fetchAll();
+  }
+
+  async function handleDeletePunishment(id) {
+    await fetch('/api/punishment-items', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
@@ -140,6 +221,9 @@ export default function Dashboard() {
         <a href="/tv" className="dash-nav-item">
           <span className="dash-nav-icon">&#128250;</span> TV
         </a>
+        <a href="/rewards" className="dash-nav-item">
+          <span className="dash-nav-icon">&#127873;</span> Rewards
+        </a>
         <a href="/dashboard" className="dash-nav-item active">
           <span className="dash-nav-icon">&#128202;</span> Dashboard
         </a>
@@ -187,6 +271,9 @@ export default function Dashboard() {
                   <div className="dash-status-desc">
                     {getStatusDesc(person)}
                   </div>
+                  <div className="dash-status-tokens">
+                    {person.token_balance || 0} tokens
+                  </div>
                 </div>
               ))}
             </div>
@@ -199,7 +286,21 @@ export default function Dashboard() {
               {chores.map((chore) => (
                 <div key={chore.id} className="dash-list-item">
                   <span>{chore.name}</span>
-                  <button className="dash-delete-btn" onClick={() => handleDeleteChore(chore.id)}>Remove</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div className="chore-token-editor">
+                      <input
+                        type="number"
+                        min="0"
+                        value={tokenEdits[chore.id] !== undefined ? tokenEdits[chore.id] : chore.token_value}
+                        onChange={(e) => setTokenEdits((prev) => ({ ...prev, [chore.id]: e.target.value }))}
+                      />
+                      {tokenEdits[chore.id] !== undefined && (
+                        <button onClick={() => handleUpdateTokenValue(chore.id)}>Save</button>
+                      )}
+                    </div>
+                    <span className="chore-token-label">tokens</span>
+                    <button className="dash-delete-btn" onClick={() => handleDeleteChore(chore.id)}>Remove</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -209,6 +310,84 @@ export default function Dashboard() {
                 placeholder="New chore name"
                 value={newChore}
                 onChange={(e) => setNewChore(e.target.value)}
+              />
+              <input
+                type="number"
+                min="0"
+                placeholder="Tokens"
+                value={newChoreTokens}
+                onChange={(e) => setNewChoreTokens(e.target.value)}
+                style={{ maxWidth: 80 }}
+              />
+              <button type="submit">Add</button>
+            </form>
+          </section>
+
+          {/* Manage Rewards */}
+          <section className="dash-section">
+            <h2>Manage Rewards</h2>
+            <div className="dash-list">
+              {rewards.map((reward) => (
+                <div key={reward.id} className="mgmt-item">
+                  <div className="mgmt-item-info">
+                    <strong>{reward.name}</strong>
+                    <span className="mgmt-item-meta">{reward.token_cost} tokens | {reward.active ? 'Active' : 'Inactive'}</span>
+                  </div>
+                  <div className="mgmt-item-actions">
+                    <button className="dash-delete-btn" onClick={() => handleDeleteReward(reward.id)}>Remove</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <form className="dash-add-form" onSubmit={handleAddReward}>
+              <input
+                type="text"
+                placeholder="Reward name"
+                value={newRewardName}
+                onChange={(e) => setNewRewardName(e.target.value)}
+              />
+              <input
+                type="number"
+                min="1"
+                placeholder="Token cost"
+                value={newRewardCost}
+                onChange={(e) => setNewRewardCost(e.target.value)}
+                style={{ maxWidth: 100 }}
+              />
+              <button type="submit">Add</button>
+            </form>
+          </section>
+
+          {/* Manage Punishment Items */}
+          <section className="dash-section">
+            <h2>Manage Punishment Items</h2>
+            <div className="dash-list">
+              {punishmentItems.map((item) => (
+                <div key={item.id} className="mgmt-item">
+                  <div className="mgmt-item-info">
+                    <strong>{item.name}</strong>
+                    <span className="mgmt-item-meta">-{item.token_deduction || 0} tokens | {item.active ? 'Active' : 'Inactive'}</span>
+                  </div>
+                  <div className="mgmt-item-actions">
+                    <button className="dash-delete-btn" onClick={() => handleDeletePunishment(item.id)}>Remove</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <form className="dash-add-form" onSubmit={handleAddPunishment}>
+              <input
+                type="text"
+                placeholder="Punishment name"
+                value={newPunishName}
+                onChange={(e) => setNewPunishName(e.target.value)}
+              />
+              <input
+                type="number"
+                min="0"
+                placeholder="Token deduction"
+                value={newPunishDeduction}
+                onChange={(e) => setNewPunishDeduction(e.target.value)}
+                style={{ maxWidth: 120 }}
               />
               <button type="submit">Add</button>
             </form>

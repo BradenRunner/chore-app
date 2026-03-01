@@ -1,4 +1,4 @@
-async function sendNotification(topic, title, message) {
+export async function sendNotification(topic, title, message) {
   const res = await fetch(`https://ntfy.sh/${topic}`, {
     method: 'POST',
     headers: { 'Title': title },
@@ -7,7 +7,7 @@ async function sendNotification(topic, title, message) {
   return res.ok;
 }
 
-async function remindSlackers(statusList) {
+export async function remindSlackers(statusList) {
   const results = [];
   for (const person of statusList) {
     if (!person.done) {
@@ -21,5 +21,3 @@ async function remindSlackers(statusList) {
   }
   return results;
 }
-
-module.exports = { sendNotification, remindSlackers };

@@ -1,29 +1,34 @@
 import { NextResponse } from 'next/server';
-import { getAllChores, addChore, deleteChore, updateChoreTokenValue } from '@/lib/db';
+import {
+  getAllPunishmentItems,
+  addPunishmentItem,
+  updatePunishmentItem,
+  deletePunishmentItem,
+} from '@/lib/db';
 
 export async function GET() {
-  return NextResponse.json(await getAllChores());
+  return NextResponse.json(await getAllPunishmentItems());
 }
 
 export async function POST(request) {
-  const { name, token_value } = await request.json();
+  const { name, token_deduction } = await request.json();
 
   if (!name?.trim()) {
     return NextResponse.json({ error: 'name is required' }, { status: 400 });
   }
 
-  await addChore(name.trim(), token_value);
+  await addPunishmentItem(name.trim(), token_deduction || 0);
   return NextResponse.json({ success: true });
 }
 
 export async function PUT(request) {
-  const { id, token_value } = await request.json();
+  const { id, ...fields } = await request.json();
 
-  if (!id || token_value === undefined) {
-    return NextResponse.json({ error: 'id and token_value are required' }, { status: 400 });
+  if (!id) {
+    return NextResponse.json({ error: 'id is required' }, { status: 400 });
   }
 
-  await updateChoreTokenValue(id, token_value);
+  await updatePunishmentItem(id, fields);
   return NextResponse.json({ success: true });
 }
 
@@ -34,6 +39,6 @@ export async function DELETE(request) {
     return NextResponse.json({ error: 'id is required' }, { status: 400 });
   }
 
-  await deleteChore(id);
+  await deletePunishmentItem(id);
   return NextResponse.json({ success: true });
 }

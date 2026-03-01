@@ -27,6 +27,28 @@ export default function TVDashboard() {
     day: 'numeric',
   });
 
+  function getCardClass(person) {
+    if (person.completions.length > 0) return 'done';
+    if (person.skipReason) return 'skipped';
+    return 'not-done';
+  }
+
+  function getStatusIcon(person) {
+    if (person.completions.length > 0) return '\u2705';
+    if (person.skipReason) return '\u23ED\uFE0F';
+    return '\u274C';
+  }
+
+  function getDescription(person) {
+    if (person.completions.length > 0) {
+      return person.completions.map((c) => c.description).join(', ');
+    }
+    if (person.skipReason) {
+      return `Skipped: ${person.skipReason}`;
+    }
+    return 'Not yet...';
+  }
+
   return (
     <div className="tv-container">
       <h1>Chore Tracker</h1>
@@ -34,11 +56,11 @@ export default function TVDashboard() {
 
       <div className="tv-grid">
         {data.people.map((person) => (
-          <div key={person.id} className={`tv-card ${person.done ? 'done' : 'not-done'}`}>
+          <div key={person.id} className={`tv-card ${getCardClass(person)}`}>
             <div className="name">{person.name}</div>
-            <div className="status-icon">{person.done ? '\u2705' : '\u274C'}</div>
+            <div className="status-icon">{getStatusIcon(person)}</div>
             <div className="chore-desc">
-              {person.done ? person.description : 'Not yet...'}
+              {getDescription(person)}
             </div>
             <div className="tv-stats">
               <div className="tv-stat">

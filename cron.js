@@ -1,6 +1,4 @@
 const cron = require('node-cron');
-const { getTodayStatus } = require('./src/lib/db');
-const { remindSlackers } = require('./src/lib/notify');
 
 console.log('Chore reminder cron started. Will check daily at 6:00 PM.');
 
@@ -9,19 +7,25 @@ cron.schedule('0 18 * * *', async () => {
   const today = new Date().toISOString().split('T')[0];
   console.log(`[${new Date().toLocaleString()}] Checking chore status for ${today}...`);
 
-  const status = getTodayStatus(today);
-  const incomplete = status.filter((p) => !p.done);
+  try {
+    const { getTodayStatus } = await import('./src/lib/db.js');
+    const { remindSlackers } = await import('./src/lib/notify.js');
+    const status = await getTodayStatus(today);
+    const incomplete = status.filter((p) => !p.done);
 
-  if (incomplete.length === 0) {
-    console.log('  Everyone has done their chores!');
-    return;
-  }
+    if (incomplete.length === 0) {
+      console.log('  Everyone has done their chores!');
+      return;
+    }
 
-  console.log(`  ${incomplete.length} person(s) haven't logged a chore. Sending reminders...`);
-  const results = await remindSlackers(status);
+    console.log(`  ${incomplete.length} person(s) haven't logged a chore. Sending reminders...`);
+    const results = await remindSlackers(status);
 
-  for (const r of results) {
-    console.log(`  Notified ${r.name}: ${r.notified ? 'success' : 'FAILED'}`);
+    for (const r of results) {
+      console.log(`  Notified ${r.name}: ${r.notified ? 'success' : 'FAILED'}`);
+    }
+  } catch (err) {
+    console.error('  Cron error:', err);
   }
 });
 
