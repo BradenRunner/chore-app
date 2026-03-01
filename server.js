@@ -15,19 +15,37 @@ app.prepare().then(() => {
     console.log(`> Server listening on port ${port}`);
   });
 
-  // Start cron — 6 PM daily (uses TZ env var for timezone)
-  cron.schedule('0 18 * * *', async () => {
-    const today = new Date().toISOString().split('T')[0];
-    console.log(`[${new Date().toLocaleString()}] Checking chore status for ${today}...`);
+  // Dynamic notification schedule — tick every 15 minutes, check DB for configured times
+  cron.schedule('*/15 * * * *', async () => {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(Math.floor(now.getMinutes() / 15) * 15).padStart(2, '0');
+    const currentSlot = `${hours}:${minutes}`;
+    const today = now.toISOString().split('T')[0];
 
     try {
-      const { getTodayStatus } = await import('./src/lib/db.js');
+      const {
+        getNotificationSchedule,
+        hasNotificationBeenSent,
+        markNotificationSent,
+        getTodayStatus,
+      } = await import('./src/lib/db.js');
       const { remindSlackers } = await import('./src/lib/notify.js');
+
+      const schedule = await getNotificationSchedule();
+      const match = schedule.find((s) => s.time === currentSlot);
+      if (!match) return;
+
+      const alreadySent = await hasNotificationBeenSent(currentSlot, today);
+      if (alreadySent) return;
+
+      console.log(`[${now.toLocaleString()}] Scheduled notification for ${currentSlot}...`);
       const status = await getTodayStatus(today);
       const incomplete = status.filter((p) => !p.done);
 
       if (incomplete.length === 0) {
         console.log('  Everyone has done their chores!');
+        await markNotificationSent(currentSlot, today, 0);
         return;
       }
 
@@ -37,10 +55,12 @@ app.prepare().then(() => {
       for (const r of results) {
         console.log(`  Notified ${r.name}: ${r.notified ? 'success' : 'FAILED'}`);
       }
+
+      await markNotificationSent(currentSlot, today, results.length);
     } catch (err) {
       console.error('  Cron error:', err);
     }
   });
 
-  console.log('> Cron scheduled: daily at 6:00 PM');
+  console.log('> Cron scheduled: checking every 15 minutes against notification schedule');
 });

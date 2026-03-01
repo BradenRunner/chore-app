@@ -368,6 +368,50 @@ export async function deletePunishmentItem(id) {
   if (error) throw error;
 }
 
+// ---- Notification Schedule Functions ----
+
+export async function getNotificationSchedule() {
+  const { data, error } = await supabase
+    .from('notification_schedule')
+    .select('*')
+    .order('time');
+  if (error) throw error;
+  return data;
+}
+
+export async function addNotificationTime(time) {
+  const { error } = await supabase
+    .from('notification_schedule')
+    .insert({ time });
+  if (error) throw error;
+}
+
+export async function deleteNotificationTime(id) {
+  const { error } = await supabase
+    .from('notification_schedule')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function hasNotificationBeenSent(timeSlot, date) {
+  const { data, error } = await supabase
+    .from('notification_sent')
+    .select('id')
+    .eq('time_slot', timeSlot)
+    .eq('date', date)
+    .maybeSingle();
+  if (error) throw error;
+  return !!data;
+}
+
+export async function markNotificationSent(timeSlot, date, reminded) {
+  const { error } = await supabase
+    .from('notification_sent')
+    .insert({ time_slot: timeSlot, date, reminded });
+  if (error) throw error;
+}
+
 export async function logPunishment(personId, punishmentItemId, dateStr) {
   // Look up punishment item
   const { data: item, error: iErr } = await supabase

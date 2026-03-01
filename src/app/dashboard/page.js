@@ -20,15 +20,21 @@ export default function Dashboard() {
   const [newPunishDeduction, setNewPunishDeduction] = useState('0');
   // Inline token editors: { [choreId]: value }
   const [tokenEdits, setTokenEdits] = useState({});
+  // Notification schedule
+  const [schedule, setSchedule] = useState([]);
+  const [schedHour, setSchedHour] = useState('6');
+  const [schedMinute, setSchedMinute] = useState('00');
+  const [schedAmPm, setSchedAmPm] = useState('PM');
 
   async function fetchAll() {
-    const [statusRes, choresRes, peopleRes, historyRes, rewardsRes, punishRes] = await Promise.all([
+    const [statusRes, choresRes, peopleRes, historyRes, rewardsRes, punishRes, schedRes] = await Promise.all([
       fetch('/api/status'),
       fetch('/api/chores'),
       fetch('/api/people'),
       fetch('/api/history?days=14'),
       fetch('/api/rewards'),
       fetch('/api/punishment-items'),
+      fetch('/api/notification-schedule'),
     ]);
     setStatus(await statusRes.json());
     setChores(await choresRes.json());
@@ -37,6 +43,7 @@ export default function Dashboard() {
     setHistory(historyData.history);
     setRewards(await rewardsRes.json());
     setPunishmentItems(await punishRes.json());
+    setSchedule(await schedRes.json());
   }
 
   useEffect(() => {
@@ -170,6 +177,41 @@ export default function Dashboard() {
 
   async function handleDeletePunishment(id) {
     await fetch('/api/punishment-items', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    fetchAll();
+  }
+
+  // Notification schedule handlers
+  function formatTime24(hour12, minute, ampm) {
+    let h = parseInt(hour12, 10);
+    if (ampm === 'AM' && h === 12) h = 0;
+    else if (ampm === 'PM' && h !== 12) h += 12;
+    return `${String(h).padStart(2, '0')}:${minute}`;
+  }
+
+  function formatTime12(time24) {
+    const [h, m] = time24.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+  }
+
+  async function handleAddScheduleTime(e) {
+    e.preventDefault();
+    const time = formatTime24(schedHour, schedMinute, schedAmPm);
+    await fetch('/api/notification-schedule', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ time }),
+    });
+    fetchAll();
+  }
+
+  async function handleDeleteScheduleTime(id) {
+    await fetch('/api/notification-schedule', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
@@ -389,6 +431,39 @@ export default function Dashboard() {
                 onChange={(e) => setNewPunishDeduction(e.target.value)}
                 style={{ maxWidth: 120 }}
               />
+              <button type="submit">Add</button>
+            </form>
+          </section>
+
+          {/* Notification Schedule */}
+          <section className="dash-section">
+            <h2>Notification Schedule</h2>
+            <div className="dash-list" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {schedule.map((s) => (
+                <span key={s.id} className="schedule-badge">
+                  {formatTime12(s.time)}
+                  <button className="schedule-badge-x" onClick={() => handleDeleteScheduleTime(s.id)}>&times;</button>
+                </span>
+              ))}
+              {schedule.length === 0 && (
+                <span style={{ color: '#64748b', fontSize: '0.9rem' }}>No notification times configured</span>
+              )}
+            </div>
+            <form className="dash-add-form" onSubmit={handleAddScheduleTime} style={{ marginTop: 12 }}>
+              <select value={schedHour} onChange={(e) => setSchedHour(e.target.value)} style={{ maxWidth: 70 }}>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => (
+                  <option key={h} value={h}>{h}</option>
+                ))}
+              </select>
+              <select value={schedMinute} onChange={(e) => setSchedMinute(e.target.value)} style={{ maxWidth: 70 }}>
+                {['00', '15', '30', '45'].map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+              <select value={schedAmPm} onChange={(e) => setSchedAmPm(e.target.value)} style={{ maxWidth: 70 }}>
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
               <button type="submit">Add</button>
             </form>
           </section>

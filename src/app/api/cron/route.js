@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getTodayStatus } from '@/lib/db';
+import {
+  getTodayStatus,
+  getNotificationSchedule,
+  hasNotificationBeenSent,
+  markNotificationSent,
+} from '@/lib/db';
 import { remindSlackers } from '@/lib/notify';
 
 export async function GET(request) {
@@ -9,15 +14,34 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(Math.floor(now.getMinutes() / 15) * 15).padStart(2, '0');
+  const currentSlot = `${hours}:${minutes}`;
+  const today = now.toISOString().split('T')[0];
+
+  const schedule = await getNotificationSchedule();
+  const match = schedule.find((s) => s.time === currentSlot);
+
+  if (!match) {
+    return NextResponse.json({ message: 'No notification scheduled for this time', slot: currentSlot });
+  }
+
+  const alreadySent = await hasNotificationBeenSent(currentSlot, today);
+  if (alreadySent) {
+    return NextResponse.json({ message: 'Already sent for this slot today', slot: currentSlot });
+  }
+
   const status = await getTodayStatus(today);
   const incomplete = status.filter((p) => !p.done);
 
   if (incomplete.length === 0) {
+    await markNotificationSent(currentSlot, today, 0);
     return NextResponse.json({ message: 'Everyone done!', reminded: 0 });
   }
 
   const results = await remindSlackers(status);
+  await markNotificationSent(currentSlot, today, results.length);
 
   return NextResponse.json({
     message: `Reminded ${results.length} people`,
