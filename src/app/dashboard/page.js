@@ -230,6 +230,7 @@ export default function Dashboard() {
       setSchedMsgEdits({
         title: s.title || 'Chore Reminder',
         body: s.body || 'Hey {name}, you haven\'t logged a chore today!',
+        repeat_interval: s.repeat_interval || 0,
       });
     }
   }
@@ -238,7 +239,7 @@ export default function Dashboard() {
     await fetch('/api/notification-schedule', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, title: schedMsgEdits.title, body: schedMsgEdits.body }),
+      body: JSON.stringify({ id, title: schedMsgEdits.title, body: schedMsgEdits.body, repeat_interval: Number(schedMsgEdits.repeat_interval) || 0 }),
     });
     setExpandedSchedule(null);
     fetchAll();
@@ -472,7 +473,7 @@ export default function Dashboard() {
                       style={{ cursor: 'pointer' }}
                       onClick={() => handleToggleScheduleExpand(s)}
                     >
-                      {formatTime12(s.time)}
+                      {formatTime12(s.time)}{s.repeat_interval > 0 && ` (every ${s.repeat_interval}m)`}
                     </span>
                     <button className="dash-delete-btn" onClick={() => handleDeleteScheduleTime(s.id)}>Remove</button>
                   </div>
@@ -494,6 +495,20 @@ export default function Dashboard() {
                           onChange={(e) => setSchedMsgEdits((prev) => ({ ...prev, body: e.target.value }))}
                         />
                         <span className="schedule-msg-hint">Use &#123;name&#125; for the person&apos;s name</span>
+                      </label>
+                      <label>
+                        Repeat
+                        <select
+                          value={schedMsgEdits.repeat_interval || 0}
+                          onChange={(e) => setSchedMsgEdits((prev) => ({ ...prev, repeat_interval: Number(e.target.value) }))}
+                        >
+                          <option value={0}>Off</option>
+                          <option value={2}>Every 2 min</option>
+                          <option value={5}>Every 5 min</option>
+                          <option value={10}>Every 10 min</option>
+                          <option value={15}>Every 15 min</option>
+                          <option value={30}>Every 30 min</option>
+                        </select>
                       </label>
                       <button onClick={() => handleSaveScheduleMessage(s.id)}>Save</button>
                     </div>

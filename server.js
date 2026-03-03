@@ -15,17 +15,18 @@ app.prepare().then(() => {
     console.log(`> Server listening on port ${port}`);
   });
 
-  // Dynamic notification schedule — tick every 15 minutes, check DB for configured times
-  cron.schedule('*/15 * * * *', async () => {
+  // Dynamic notification schedule — tick every minute, check DB for configured times + repeat intervals
+  cron.schedule('* * * * *', async () => {
     const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(Math.floor(now.getMinutes() / 15) * 15).padStart(2, '0');
-    const currentSlot = `${hours}:${minutes}`;
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentSlot = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
     const today = now.toISOString().split('T')[0];
 
     try {
       const {
         getNotificationSchedule,
+        getEligibleScheduleEntries,
         hasNotificationBeenSent,
         markNotificationSent,
         getTodayStatus,
@@ -33,12 +34,13 @@ app.prepare().then(() => {
       const { remindSlackers } = await import('./src/lib/notify.js');
 
       const schedule = await getNotificationSchedule();
-      const match = schedule.find((s) => s.time === currentSlot);
-      if (!match) return;
+      const eligible = getEligibleScheduleEntries(schedule, hours, minutes);
+      if (eligible.length === 0) return;
 
       const alreadySent = await hasNotificationBeenSent(currentSlot, today);
       if (alreadySent) return;
 
+      const match = eligible[0];
       console.log(`[${now.toLocaleString()}] Scheduled notification for ${currentSlot}...`);
       const status = await getTodayStatus(today);
       const incomplete = status.filter((p) => !p.done);
@@ -62,5 +64,5 @@ app.prepare().then(() => {
     }
   });
 
-  console.log('> Cron scheduled: checking every 15 minutes against notification schedule');
+  console.log('> Cron scheduled: checking every minute against notification schedule');
 });

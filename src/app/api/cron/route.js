@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import {
   getTodayStatus,
   getNotificationSchedule,
+  getEligibleScheduleEntries,
   hasNotificationBeenSent,
   markNotificationSent,
 } from '@/lib/db';
@@ -15,15 +16,15 @@ export async function GET(request) {
   }
 
   const now = new Date();
-  const hours = String(now.getHours()).padStart(2, '0');
-  const minutes = String(Math.floor(now.getMinutes() / 15) * 15).padStart(2, '0');
-  const currentSlot = `${hours}:${minutes}`;
+  const hours = now.getHours();
+  const minutes = now.getMinutes();
+  const currentSlot = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   const today = now.toISOString().split('T')[0];
 
   const schedule = await getNotificationSchedule();
-  const match = schedule.find((s) => s.time === currentSlot);
+  const eligible = getEligibleScheduleEntries(schedule, hours, minutes);
 
-  if (!match) {
+  if (eligible.length === 0) {
     return NextResponse.json({ message: 'No notification scheduled for this time', slot: currentSlot });
   }
 
@@ -32,6 +33,7 @@ export async function GET(request) {
     return NextResponse.json({ message: 'Already sent for this slot today', slot: currentSlot });
   }
 
+  const match = eligible[0];
   const status = await getTodayStatus(today);
   const incomplete = status.filter((p) => !p.done);
 

@@ -12,7 +12,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-  const { time, title, body } = await request.json();
+  const { time, title, body, repeat_interval } = await request.json();
 
   if (!time || !/^\d{2}:\d{2}$/.test(time)) {
     return NextResponse.json({ error: 'Invalid time format. Use HH:MM.' }, { status: 400 });
@@ -23,18 +23,18 @@ export async function POST(request) {
     return NextResponse.json({ error: 'Hours must be 0-23, minutes must be 00/15/30/45.' }, { status: 400 });
   }
 
-  await addNotificationTime(time, title, body);
+  await addNotificationTime(time, title, body, repeat_interval);
   return NextResponse.json({ success: true });
 }
 
 export async function PUT(request) {
-  const { id, title, body } = await request.json();
+  const { id, title, body, repeat_interval } = await request.json();
 
   if (!id) {
     return NextResponse.json({ error: 'Missing id' }, { status: 400 });
   }
 
-  await updateNotificationMessage(id, title, body);
+  await updateNotificationMessage(id, title, body, repeat_interval);
   return NextResponse.json({ success: true });
 }
 

@@ -379,20 +379,36 @@ export async function getNotificationSchedule() {
   return data;
 }
 
-export async function addNotificationTime(time, title, body) {
+export function getEligibleScheduleEntries(schedule, currentHours, currentMinutes) {
+  const currentMinuteOfDay = currentHours * 60 + currentMinutes;
+  return schedule.filter((entry) => {
+    const [h, m] = entry.time.split(':').map(Number);
+    const entryMinuteOfDay = h * 60 + m;
+    const diff = currentMinuteOfDay - entryMinuteOfDay;
+    if (diff < 0) return false;
+    if (diff > 120) return false;
+    const interval = entry.repeat_interval || 0;
+    if (interval === 0) return diff === 0;
+    return diff % interval === 0;
+  });
+}
+
+export async function addNotificationTime(time, title, body, repeatInterval) {
   const row = { time };
   if (title) row.title = title;
   if (body) row.body = body;
+  if (repeatInterval !== undefined) row.repeat_interval = repeatInterval;
   const { error } = await supabase
     .from('notification_schedule')
     .insert(row);
   if (error) throw error;
 }
 
-export async function updateNotificationMessage(id, title, body) {
+export async function updateNotificationMessage(id, title, body, repeatInterval) {
   const updates = {};
   if (title !== undefined) updates.title = title;
   if (body !== undefined) updates.body = body;
+  if (repeatInterval !== undefined) updates.repeat_interval = repeatInterval;
   if (Object.keys(updates).length === 0) return;
   const { error } = await supabase
     .from('notification_schedule')
