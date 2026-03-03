@@ -8,11 +8,12 @@
   --green: #22c55e;
   --red: #ef4444;
   --gray: #6b7280;
-  --bg: #0f172a;
-  --card: #1e293b;
-  --text: #f1f5f9;
-  --text-muted: #94a3b8;
+  --bg: #f5f7fa;
+  --card: #fff;
+  --text: #1e293b;
+  --text-muted: #64748b;
   --accent: #3b82f6;
+  --border: #e2e8f0;
 }
 
 body {
@@ -60,11 +61,13 @@ body {
 
 .person-btn:hover {
   background: var(--accent);
+  color: white;
 }
 
 .person-btn.active {
   background: var(--accent);
   border-color: var(--accent);
+  color: white;
 }
 
 .chore-grid {
@@ -76,7 +79,7 @@ body {
 
 .chore-btn {
   padding: 18px 12px;
-  border: 2px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--card);
   color: var(--text);
@@ -84,6 +87,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .chore-btn:hover {
@@ -106,7 +110,7 @@ body {
   width: 100%;
   text-align: center;
   padding: 32px 16px;
-  background: var(--card);
+  background: #f0fdf4;
   border-radius: 16px;
   border: 2px solid var(--green);
 }
@@ -125,11 +129,13 @@ body {
   margin-top: auto;
   padding: 16px;
   background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 12px;
   width: 100%;
   text-align: center;
   font-size: 0.85rem;
   color: var(--text-muted);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .ntfy-info code {
@@ -169,8 +175,9 @@ body {
   border-radius: 20px;
   padding: 32px;
   text-align: center;
-  border: 3px solid transparent;
+  border: 3px solid var(--border);
   transition: border-color 0.3s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .tv-card.done {
@@ -651,13 +658,14 @@ body {
   font-size: 1.8rem;
   text-align: center;
   letter-spacing: 0.5em;
-  border: 2px solid #334155;
+  border: 2px solid var(--border);
   border-radius: 12px;
   background: var(--card);
   color: var(--text);
   outline: none;
   display: block;
   margin: 0 auto 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .pin-input:focus {
@@ -695,7 +703,7 @@ body {
 
 .pin-back {
   padding: 12px 24px;
-  border: 2px solid var(--gray);
+  border: 2px solid var(--border);
   border-radius: 10px;
   background: transparent;
   color: var(--text-muted);
@@ -719,7 +727,7 @@ body {
 
 .logout-btn {
   padding: 8px 16px;
-  border: 1px solid var(--gray);
+  border: 1px solid var(--border);
   border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
@@ -735,8 +743,8 @@ body {
 /* Today Completions */
 .today-completions {
   width: 100%;
-  background: var(--card);
-  border: 2px solid var(--green);
+  background: #f0fdf4;
+  border: 2px solid #bbf7d0;
   border-radius: 12px;
   padding: 16px 20px;
   margin-bottom: 20px;
@@ -776,7 +784,7 @@ body {
 .skip-toggle {
   width: 100%;
   padding: 12px;
-  border: 1px dashed var(--gray);
+  border: 1px dashed var(--border);
   border-radius: 10px;
   background: transparent;
   color: var(--text-muted);
@@ -798,7 +806,7 @@ body {
 .skip-form textarea {
   width: 100%;
   padding: 12px;
-  border: 2px solid #334155;
+  border: 2px solid var(--border);
   border-radius: 10px;
   background: var(--card);
   color: var(--text);
@@ -844,12 +852,12 @@ body {
 /* Skip Display */
 .skip-display {
   width: 100%;
-  background: var(--card);
-  border: 2px solid #f59e0b;
+  background: #fffbeb;
+  border: 2px solid #fde68a;
   border-radius: 12px;
   padding: 14px 20px;
   margin-bottom: 20px;
-  color: #f59e0b;
+  color: #92400e;
   font-size: 0.95rem;
 }
 
@@ -884,7 +892,7 @@ body {
   border: 2px solid #f59e0b;
   border-radius: 10px;
   background: transparent;
-  color: #f59e0b;
+  color: #92400e;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
@@ -893,11 +901,11 @@ body {
 }
 
 .rewards-link-btn:hover {
-  background: rgba(245, 158, 11, 0.1);
+  background: #fffbeb;
 }
 
 /* ============================
-   Rewards Page (Dark Theme)
+   Rewards Page
    ============================ */
 .rewards-container {
   max-width: 500px;
@@ -938,7 +946,7 @@ body {
 
 .rewards-back-btn {
   padding: 8px 16px;
-  border: 1px solid var(--gray);
+  border: 1px solid var(--border);
   border-radius: 8px;
   background: transparent;
   color: var(--text-muted);
@@ -954,13 +962,14 @@ body {
 
 .reward-card {
   background: var(--card);
-  border: 2px solid #334155;
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px 20px;
   margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .reward-card .reward-info {
@@ -1031,7 +1040,7 @@ body {
 }
 
 .wheel-overlay .wheel-subtitle {
-  color: var(--text-muted);
+  color: #94a3b8;
   font-size: 0.9rem;
   margin-bottom: 24px;
   text-align: center;
@@ -1099,7 +1108,7 @@ body {
 }
 
 .wheel-result .result-label {
-  color: var(--text-muted);
+  color: #94a3b8;
   font-size: 0.85rem;
   margin-bottom: 4px;
 }
@@ -1119,10 +1128,10 @@ body {
 .wheel-dismiss-btn {
   margin-top: 16px;
   padding: 10px 24px;
-  border: 1px solid var(--gray);
+  border: 1px solid #94a3b8;
   border-radius: 8px;
   background: transparent;
-  color: var(--text-muted);
+  color: #94a3b8;
   cursor: pointer;
   font-size: 0.9rem;
 }
