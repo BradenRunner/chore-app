@@ -23,6 +23,9 @@ export default function Home() {
   const [wheelChecked, setWheelChecked] = useState(false);
   const canvasRef = useRef(null);
   const spinnerRef = useRef(null);
+  // Skip voting state
+  const [pendingVotes, setPendingVotes] = useState([]);
+  const [votingOn, setVotingOn] = useState(null); // skipReasonId being voted on
 
   const fetchStatus = useCallback(async () => {
     const res = await fetch('/api/status');
@@ -32,6 +35,17 @@ export default function Home() {
     setLoading(false);
     return data;
   }, []);
+
+  const fetchPendingVotes = useCallback(async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/skip-votes?voterId=${user.personId}`);
+      const data = await res.json();
+      setPendingVotes(data);
+    } catch {
+      // ignore
+    }
+  }, [user]);
 
   useEffect(() => {
     const saved = localStorage.getItem('choreUser');
@@ -46,12 +60,29 @@ export default function Home() {
     fetchChores();
   }, [fetchStatus]);
 
-  // Check if punishment wheel should show (no completions AND no skip reason)
+  // Fetch pending votes on login and poll every 15s
+  useEffect(() => {
+    if (!user) return;
+    fetchPendingVotes();
+    const interval = setInterval(fetchPendingVotes, 15000);
+    return () => clearInterval(interval);
+  }, [user, fetchPendingVotes]);
+
+  // Check if punishment wheel should show
   useEffect(() => {
     if (!user || !statusData || wheelChecked) return;
     const myStatus = statusData.people.find((p) => p.id === user.personId);
-    if (myStatus && myStatus.completions.length === 0 && !myStatus.skipReason) {
-      // Check if there are punishment items configured
+    if (!myStatus) return;
+
+    const shouldShowWheel =
+      myStatus.completions.length === 0 && (
+        // Original: no skip at all
+        (!myStatus.skipReason) ||
+        // New: skip was voted invalid and not yet punished
+        (myStatus.skipVoteResult === 'invalid' && !myStatus.punishedToday)
+      );
+
+    if (shouldShowWheel) {
       fetch('/api/punishment-items')
         .then((r) => r.json())
         .then((items) => {
@@ -117,6 +148,7 @@ export default function Home() {
     setShowWheel(false);
     setWheelResult(null);
     setWheelChecked(false);
+    setPendingVotes([]);
   }
 
   async function handleChoreSelect(choreName) {
@@ -152,6 +184,22 @@ export default function Home() {
     await fetchStatus();
   }
 
+  async function handleVote(skipReasonId, vote) {
+    setVotingOn(skipReasonId);
+    try {
+      await fetch('/api/skip-votes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ skipReasonId, voterId: user.personId, vote }),
+      });
+      await fetchPendingVotes();
+      await fetchStatus();
+    } catch {
+      // ignore
+    }
+    setVotingOn(null);
+  }
+
   // Punishment wheel spin
   function handleSpin() {
     if (wheelSpinning || punishmentItems.length < 2) return;
@@ -159,20 +207,13 @@ export default function Home() {
     setWheelResult(null);
 
     const sliceAngle = 360 / punishmentItems.length;
-    // Random result index
     const resultIndex = Math.floor(Math.random() * punishmentItems.length);
-    // Calculate rotation: multiple full turns + land so the pointer (top) points to resultIndex
-    // Slice i occupies from i*sliceAngle to (i+1)*sliceAngle. Center is at (i+0.5)*sliceAngle.
-    // The pointer is at the top (0/360 degrees). We rotate clockwise.
-    // To land on slice `resultIndex`, the center of that slice should be at the top after rotation.
-    // That means total rotation = fullTurns*360 + (360 - resultIndex*sliceAngle - sliceAngle/2)
     const fullTurns = 5 + Math.floor(Math.random() * 3);
     const targetAngle = fullTurns * 360 + (360 - resultIndex * sliceAngle - sliceAngle / 2);
 
     if (spinnerRef.current) {
       spinnerRef.current.style.transition = 'none';
       spinnerRef.current.style.transform = 'rotate(0deg)';
-      // Force reflow
       spinnerRef.current.offsetHeight;
       spinnerRef.current.style.transition = 'transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99)';
       spinnerRef.current.style.transform = `rotate(${targetAngle}deg)`;
@@ -183,7 +224,6 @@ export default function Home() {
       setWheelResult(item);
       setWheelSpinning(false);
 
-      // Log punishment
       try {
         await fetch('/api/punishment', {
           method: 'POST',
@@ -202,6 +242,14 @@ export default function Home() {
   }
 
   const myStatus = user ? people.find((p) => p.id === user.personId) : null;
+
+  // Determine wheel subtitle based on context
+  function getWheelSubtitle() {
+    if (myStatus && myStatus.skipVoteResult === 'invalid') {
+      return 'Your skip reason was voted invalid!';
+    }
+    return "You haven\u2019t done any chores or submitted a reason!";
+  }
 
   // Not logged in — show person selection + PIN entry
   if (!user) {
@@ -260,7 +308,7 @@ export default function Home() {
       {showWheel && punishmentItems.length >= 2 && (
         <div className="wheel-overlay">
           <h2>Punishment Wheel</h2>
-          <p className="wheel-subtitle">You haven&apos;t done any chores or submitted a reason!</p>
+          <p className="wheel-subtitle">{getWheelSubtitle()}</p>
           <div className="wheel-container">
             <div className="wheel-pointer"></div>
             <div className="wheel-spinner" ref={spinnerRef}>
@@ -305,6 +353,37 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Pending Skip Votes */}
+      {pendingVotes.length > 0 && (
+        <div className="vote-section">
+          <h3>Skip Votes Needed</h3>
+          {pendingVotes.map((skip) => (
+            <div key={skip.id} className="vote-card">
+              <div className="vote-card-info">
+                <strong>{skip.personName}</strong> wants to skip:
+                <blockquote>&ldquo;{skip.reason}&rdquo;</blockquote>
+              </div>
+              <div className="vote-card-actions">
+                <button
+                  className="vote-btn valid"
+                  onClick={() => handleVote(skip.id, 'valid')}
+                  disabled={votingOn === skip.id}
+                >
+                  Valid
+                </button>
+                <button
+                  className="vote-btn invalid"
+                  onClick={() => handleVote(skip.id, 'invalid')}
+                  disabled={votingOn === skip.id}
+                >
+                  Not Valid
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Today's completions */}
       {myStatus && myStatus.completions.length > 0 && (
         <div className="today-completions">
@@ -319,8 +398,13 @@ export default function Home() {
 
       {/* Skip display */}
       {myStatus && myStatus.skipReason && (
-        <div className="skip-display">
+        <div className={`skip-display${myStatus.skipVoteResult === 'invalid' ? ' skip-rejected' : ''}`}>
           <p>Skipping today: {myStatus.skipReason}</p>
+          <p className={`skip-vote-status ${myStatus.skipVoteResult || 'pending'}`}>
+            {!myStatus.skipVoteResult && 'Waiting for votes...'}
+            {myStatus.skipVoteResult === 'valid' && 'Skip approved!'}
+            {myStatus.skipVoteResult === 'invalid' && 'Skip rejected'}
+          </p>
         </div>
       )}
 
@@ -420,7 +504,6 @@ function drawWheel(canvas, items) {
     ctx.font = 'bold 12px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // Truncate long names
     const label = item.name.length > 14 ? item.name.slice(0, 12) + '..' : item.name;
     ctx.fillText(label, r * 0.6, 0);
     ctx.restore();

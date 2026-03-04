@@ -29,13 +29,21 @@ export default function TVDashboard() {
 
   function getCardClass(person) {
     if (person.completions.length > 0) return 'done';
-    if (person.skipReason) return 'skipped';
+    if (person.skipReason) {
+      if (!person.skipVoteResult) return 'voting';
+      if (person.skipVoteResult === 'invalid') return 'not-done';
+      return 'skipped';
+    }
     return 'not-done';
   }
 
   function getStatusIcon(person) {
     if (person.completions.length > 0) return '\u2705';
-    if (person.skipReason) return '\u23ED\uFE0F';
+    if (person.skipReason) {
+      if (!person.skipVoteResult) return '\u2696\uFE0F';
+      if (person.skipVoteResult === 'invalid') return '\u274C';
+      return '\u23ED\uFE0F';
+    }
     return '\u274C';
   }
 
@@ -44,7 +52,11 @@ export default function TVDashboard() {
       return person.completions.map((c) => c.description).join(', ');
     }
     if (person.skipReason) {
-      return `Skipped: ${person.skipReason}`;
+      let suffix = '';
+      if (!person.skipVoteResult) suffix = ' (voting...)';
+      else if (person.skipVoteResult === 'invalid') suffix = ' (REJECTED)';
+      else suffix = ' (approved)';
+      return `Skipped: ${person.skipReason}${suffix}`;
     }
     return 'Not yet...';
   }

@@ -866,9 +866,127 @@ body {
   border-color: #f59e0b;
 }
 
+/* TV Card - Voting */
+.tv-card.voting {
+  border-color: #8b5cf6;
+  background: #f5f3ff;
+}
+
 /* Dashboard - Skipped */
 .dash-status-card.skipped {
   border-color: #f59e0b;
+}
+
+/* Dashboard - Voting */
+.dash-layout .dash-status-card.voting {
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+}
+
+/* ============================
+   Skip Voting UI (Phone)
+   ============================ */
+.vote-section {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.vote-section h3 {
+  font-size: 0.9rem;
+  color: #8b5cf6;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.vote-card {
+  background: var(--card);
+  border: 2px solid #c4b5fd;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.vote-card-info {
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 10px;
+}
+
+.vote-card-info blockquote {
+  margin: 6px 0 0;
+  padding: 8px 12px;
+  background: #f5f3ff;
+  border-left: 3px solid #8b5cf6;
+  border-radius: 6px;
+  font-style: italic;
+  color: var(--text-muted);
+}
+
+.vote-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.vote-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vote-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vote-btn.valid {
+  background: var(--green);
+  color: white;
+}
+
+.vote-btn.valid:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.vote-btn.invalid {
+  background: var(--red);
+  color: white;
+}
+
+.vote-btn.invalid:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+/* Skip vote status text */
+.skip-vote-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 6px;
+}
+
+.skip-vote-status.pending {
+  color: #8b5cf6;
+}
+
+.skip-vote-status.valid {
+  color: var(--green);
+}
+
+.skip-vote-status.invalid {
+  color: var(--red);
+}
+
+/* Skip display when rejected */
+.skip-display.skip-rejected {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #991b1b;
 }
 
 /* ============================

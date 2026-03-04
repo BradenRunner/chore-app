@@ -29,20 +29,35 @@ export async function getTodayStatus(dateStr) {
     .eq('date', dateStr);
   if (sErr) throw sErr;
 
+  const { data: punishments, error: punErr } = await supabase
+    .from('punishment_log')
+    .select('person_id')
+    .eq('date', dateStr);
+  if (punErr) throw punErr;
+
+  const punishedSet = new Set(punishments.map((p) => p.person_id));
+
   return people.map((person) => {
     const personCompletions = completions.filter((c) => c.person_id === person.id);
     const skip = skips.find((s) => s.person_id === person.id);
+    const hasSkip = !!skip;
+    const skipVoteResult = skip?.vote_result || null;
+    // done = has completions OR (has skip AND vote not rejected)
+    const done = personCompletions.length > 0 || (hasSkip && skipVoteResult !== 'invalid');
     return {
       id: person.id,
       name: person.name,
       ntfy_topic: person.ntfy_topic,
       token_balance: person.token_balance || 0,
-      done: personCompletions.length > 0 || !!skip,
+      done,
       completions: personCompletions.map((c) => ({
         id: c.id,
         description: c.description,
       })),
       skipReason: skip?.reason || null,
+      skipReasonId: skip?.id || null,
+      skipVoteResult,
+      punishedToday: punishedSet.has(person.id),
     };
   });
 }
@@ -201,13 +216,124 @@ export async function logLogin(personId) {
 }
 
 export async function submitSkipReason(personId, reason, dateStr) {
+  // Check if there's an existing skip reason (for vote reset)
+  const { data: existing } = await supabase
+    .from('skip_reasons')
+    .select('id')
+    .eq('person_id', personId)
+    .eq('date', dateStr)
+    .maybeSingle();
+
   const { error } = await supabase
     .from('skip_reasons')
     .upsert(
-      { person_id: personId, date: dateStr, reason },
+      { person_id: personId, date: dateStr, reason, vote_result: null },
       { onConflict: 'person_id,date' }
     );
   if (error) throw error;
+
+  // If re-submitting, delete existing votes so voting restarts
+  if (existing) {
+    await supabase
+      .from('skip_votes')
+      .delete()
+      .eq('skip_reason_id', existing.id);
+  }
+}
+
+// ---- Skip Vote Functions ----
+
+export async function castSkipVote(skipReasonId, voterId, vote) {
+  const { error } = await supabase
+    .from('skip_votes')
+    .upsert(
+      { skip_reason_id: skipReasonId, voter_id: voterId, vote },
+      { onConflict: 'skip_reason_id,voter_id' }
+    );
+  if (error) throw error;
+
+  // Auto-resolve if all votes are in
+  return resolveSkipVoteIfComplete(skipReasonId);
+}
+
+export async function resolveSkipVoteIfComplete(skipReasonId) {
+  // Get the skip reason to find the skipper
+  const { data: skipReason, error: srErr } = await supabase
+    .from('skip_reasons')
+    .select('*')
+    .eq('id', skipReasonId)
+    .single();
+  if (srErr) throw srErr;
+
+  // Get all people (eligible voters = everyone except the skipper)
+  const { data: allPeople, error: pErr } = await supabase
+    .from('people')
+    .select('id')
+    .order('id');
+  if (pErr) throw pErr;
+
+  const eligibleVoters = allPeople.filter((p) => p.id !== skipReason.person_id);
+
+  // Get current votes
+  const { data: votes, error: vErr } = await supabase
+    .from('skip_votes')
+    .select('*')
+    .eq('skip_reason_id', skipReasonId);
+  if (vErr) throw vErr;
+
+  // Check if all eligible voters have voted
+  if (votes.length < eligibleVoters.length) {
+    return { resolved: false, votesIn: votes.length, totalVoters: eligibleVoters.length };
+  }
+
+  // All votes in — tally
+  const invalidCount = votes.filter((v) => v.vote === 'invalid').length;
+  const validCount = votes.filter((v) => v.vote === 'valid').length;
+  // invalid > valid → 'invalid', else → 'valid' (ties = valid)
+  const result = invalidCount > validCount ? 'invalid' : 'valid';
+
+  // Cache result
+  const { error: upErr } = await supabase
+    .from('skip_reasons')
+    .update({ vote_result: result })
+    .eq('id', skipReasonId);
+  if (upErr) throw upErr;
+
+  return { resolved: true, result, validCount, invalidCount };
+}
+
+export async function getPendingSkipVotesForVoter(voterId, dateStr) {
+  // Get today's skip reasons from OTHER people that are still unresolved
+  const { data: skips, error: sErr } = await supabase
+    .from('skip_reasons')
+    .select('*, people(name)')
+    .eq('date', dateStr)
+    .is('vote_result', null)
+    .neq('person_id', voterId);
+  if (sErr) throw sErr;
+
+  // Get this voter's existing votes
+  const skipIds = skips.map((s) => s.id);
+  if (skipIds.length === 0) return [];
+
+  const { data: existingVotes, error: vErr } = await supabase
+    .from('skip_votes')
+    .select('skip_reason_id')
+    .eq('voter_id', voterId)
+    .in('skip_reason_id', skipIds);
+  if (vErr) throw vErr;
+
+  const votedSet = new Set(existingVotes.map((v) => v.skip_reason_id));
+
+  // Return only skips this voter hasn't voted on yet
+  return skips
+    .filter((s) => !votedSet.has(s.id))
+    .map((s) => ({
+      id: s.id,
+      personName: s.people.name,
+      reason: s.reason,
+      date: s.date,
+    }));
 }
 
 // ---- Token Functions ----
