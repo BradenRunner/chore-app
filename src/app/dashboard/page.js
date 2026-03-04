@@ -48,7 +48,8 @@ export default function Dashboard() {
     setRewards(await rewardsRes.json());
     setPunishmentItems(await punishRes.json());
     setSchedule(await schedRes.json());
-    setSupplies(await suppliesRes.json());
+    const suppliesData = await suppliesRes.json();
+    setSupplies(Array.isArray(suppliesData) ? suppliesData : []);
   }
 
   useEffect(() => {

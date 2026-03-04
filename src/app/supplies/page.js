@@ -15,7 +15,7 @@ export default function SuppliesPage() {
   async function fetchSupplies() {
     const res = await fetch('/api/supplies');
     const data = await res.json();
-    setSupplies(data);
+    setSupplies(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
