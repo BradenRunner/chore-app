@@ -886,6 +886,30 @@ body {
 /* ============================
    Skip Voting UI (Phone)
    ============================ */
+/* Vote gate — blocks chores until all votes cast */
+.vote-gate {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.vote-gate-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.vote-gate-header h2 {
+  font-size: 1.2rem;
+  color: #8b5cf6;
+  margin-bottom: 4px;
+}
+
+.vote-gate-header p {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
 .vote-section {
   width: 100%;
   margin-bottom: 20px;

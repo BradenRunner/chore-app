@@ -353,36 +353,45 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Pending Skip Votes */}
+      {/* Pending Skip Votes — must complete all before accessing chores */}
       {pendingVotes.length > 0 && (
-        <div className="vote-section">
-          <h3>Skip Votes Needed</h3>
-          {pendingVotes.map((skip) => (
-            <div key={skip.id} className="vote-card">
-              <div className="vote-card-info">
-                <strong>{skip.personName}</strong> wants to skip:
-                <blockquote>&ldquo;{skip.reason}&rdquo;</blockquote>
+        <div className="vote-gate">
+          <div className="vote-gate-header">
+            <h2>Vote Before You Start</h2>
+            <p>You must vote on all skip reasons before marking off chores.</p>
+          </div>
+          <div className="vote-section">
+            <h3>Skip Votes Needed ({pendingVotes.length})</h3>
+            {pendingVotes.map((skip) => (
+              <div key={skip.id} className="vote-card">
+                <div className="vote-card-info">
+                  <strong>{skip.personName}</strong> wants to skip:
+                  <blockquote>&ldquo;{skip.reason}&rdquo;</blockquote>
+                </div>
+                <div className="vote-card-actions">
+                  <button
+                    className="vote-btn valid"
+                    onClick={() => handleVote(skip.id, 'valid')}
+                    disabled={votingOn === skip.id}
+                  >
+                    Valid
+                  </button>
+                  <button
+                    className="vote-btn invalid"
+                    onClick={() => handleVote(skip.id, 'invalid')}
+                    disabled={votingOn === skip.id}
+                  >
+                    Not Valid
+                  </button>
+                </div>
               </div>
-              <div className="vote-card-actions">
-                <button
-                  className="vote-btn valid"
-                  onClick={() => handleVote(skip.id, 'valid')}
-                  disabled={votingOn === skip.id}
-                >
-                  Valid
-                </button>
-                <button
-                  className="vote-btn invalid"
-                  onClick={() => handleVote(skip.id, 'invalid')}
-                  disabled={votingOn === skip.id}
-                >
-                  Not Valid
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
+
+      {/* Everything below is hidden while votes are pending */}
+      {pendingVotes.length === 0 && <>
 
       {/* Today's completions */}
       {myStatus && myStatus.completions.length > 0 && (
@@ -463,6 +472,8 @@ export default function Home() {
           <code>{myStatus.ntfy_topic}</code>
         </div>
       )}
+
+      </>}
     </div>
   );
 }
