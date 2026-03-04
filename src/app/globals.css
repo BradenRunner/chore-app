@@ -348,7 +348,7 @@ body {
 /* Summary stat cards row */
 .dash-stats-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 28px;
 }
@@ -637,6 +637,9 @@ body {
   }
   .dash-stats-row {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .supplies-container {
+    padding: 16px 12px;
   }
 }
 
@@ -1463,6 +1466,342 @@ body {
 .dash-layout .schedule-msg-edit select:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+/* ============================
+   Supplies Page
+   ============================ */
+.supplies-container {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  min-height: 100dvh;
+}
+
+.supplies-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.supplies-header h1 {
+  font-size: 1.5rem;
+}
+
+.supplies-back-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.supplies-back-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.supplies-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 40px 0;
+}
+
+.supplies-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.supply-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.supply-card.supply-status-ok {
+  border-left: 4px solid #22c55e;
+}
+
+.supply-card.supply-status-warning {
+  border-left: 4px solid #f59e0b;
+}
+
+.supply-card.supply-status-critical {
+  border-left: 4px solid #ef4444;
+}
+
+.supply-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.supply-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.supply-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.supply-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.supply-status.ok {
+  color: #22c55e;
+}
+
+.supply-status.warning {
+  color: #f59e0b;
+}
+
+.supply-status.critical {
+  color: #ef4444;
+}
+
+.supply-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.supply-restock-btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.supply-restock-btn:hover {
+  background: #16a34a;
+}
+
+.supply-edit-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.supply-edit-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.supply-delete-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--red);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+.supply-delete-btn:hover {
+  background: var(--red);
+  color: white;
+}
+
+.supply-progress {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.supply-progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+}
+
+.supply-progress-bar.ok {
+  background: #22c55e;
+}
+
+.supply-progress-bar.warning {
+  background: #f59e0b;
+}
+
+.supply-progress-bar.critical {
+  background: #ef4444;
+}
+
+.supply-meta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.supply-add-form {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.supply-add-form h3 {
+  font-size: 1rem;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+
+.supply-add-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.supply-add-form input[type="text"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.supply-add-form input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+.supply-add-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.supply-add-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.supply-add-row input {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.supply-add-row input:focus {
+  border-color: var(--accent);
+}
+
+.supply-add-form button[type="submit"] {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.supply-add-form button[type="submit"]:hover {
+  background: #2563eb;
+}
+
+.supply-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.supply-edit-form input[type="text"] {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  color: var(--text);
+}
+
+.supply-edit-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.supply-edit-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.supply-edit-row input {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  outline: none;
+  color: var(--text);
+}
+
+.supply-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.supply-edit-actions button {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 0.85rem;
+  background: #22c55e;
+  color: white;
+}
+
+.supply-edit-actions button:hover {
+  background: #16a34a;
+}
+
+.supply-cancel-btn {
+  background: #94a3b8 !important;
+}
+
+.supply-cancel-btn:hover {
+  background: #64748b !important;
 }
 
 .dash-layout .dash-add-form select {

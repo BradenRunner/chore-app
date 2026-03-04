@@ -569,6 +569,84 @@ export async function markNotificationSent(timeSlot, date, reminded) {
   if (error) throw error;
 }
 
+// ---- Supply Functions ----
+
+export async function getAllSupplies() {
+  const { data, error } = await supabase
+    .from('supplies')
+    .select('*')
+    .order('id');
+  if (error) throw error;
+  return data;
+}
+
+export async function addSupply(name, daysDuration, alertDaysBefore, alertIntervalDays) {
+  const row = { name, days_duration: daysDuration };
+  if (alertDaysBefore !== undefined) row.alert_days_before = alertDaysBefore;
+  if (alertIntervalDays !== undefined) row.alert_interval_days = alertIntervalDays;
+  const { error } = await supabase.from('supplies').insert(row);
+  if (error) throw error;
+}
+
+export async function updateSupply(id, fields) {
+  const updates = {};
+  if (fields.name !== undefined) updates.name = fields.name;
+  if (fields.days_duration !== undefined) updates.days_duration = fields.days_duration;
+  if (fields.alert_days_before !== undefined) updates.alert_days_before = fields.alert_days_before;
+  if (fields.alert_interval_days !== undefined) updates.alert_interval_days = fields.alert_interval_days;
+  if (Object.keys(updates).length === 0) return;
+  const { error } = await supabase.from('supplies').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteSupply(id) {
+  const { error } = await supabase.from('supplies').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function restockSupply(id) {
+  const today = new Date().toISOString().split('T')[0];
+  const { error } = await supabase
+    .from('supplies')
+    .update({ last_restocked: today, last_alert_date: null })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function getSuppliesDueForAlert(todayStr) {
+  const { data, error } = await supabase
+    .from('supplies')
+    .select('*');
+  if (error) throw error;
+
+  const today = new Date(todayStr + 'T00:00:00');
+  return data.filter((s) => {
+    const emptyDate = new Date(s.last_restocked + 'T00:00:00');
+    emptyDate.setDate(emptyDate.getDate() + s.days_duration);
+    const alertStartDate = new Date(emptyDate);
+    alertStartDate.setDate(alertStartDate.getDate() - s.alert_days_before);
+
+    if (today < alertStartDate) return false;
+
+    if (s.last_alert_date) {
+      const lastAlert = new Date(s.last_alert_date + 'T00:00:00');
+      const nextAlertDate = new Date(lastAlert);
+      nextAlertDate.setDate(nextAlertDate.getDate() + s.alert_interval_days);
+      if (today < nextAlertDate) return false;
+    }
+
+    return true;
+  });
+}
+
+export async function markSupplyAlerted(id, dateStr) {
+  const { error } = await supabase
+    .from('supplies')
+    .update({ last_alert_date: dateStr })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 export async function logPunishment(personId, punishmentItemId, dateStr) {
   // Look up punishment item
   const { data: item, error: iErr } = await supabase

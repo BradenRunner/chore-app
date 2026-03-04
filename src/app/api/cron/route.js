@@ -5,8 +5,11 @@ import {
   getEligibleScheduleEntries,
   hasNotificationBeenSent,
   markNotificationSent,
+  getAllPeople,
+  getSuppliesDueForAlert,
+  markSupplyAlerted,
 } from '@/lib/db';
-import { remindSlackers } from '@/lib/notify';
+import { remindSlackers, sendNotification } from '@/lib/notify';
 
 export async function GET(request) {
   // Verify the request is from Vercel Cron
@@ -45,9 +48,32 @@ export async function GET(request) {
   const results = await remindSlackers(status, match.title, match.body);
   await markNotificationSent(currentSlot, today, results.length);
 
+  // ---- Supply alerts ----
+  const dueSupplies = await getSuppliesDueForAlert(today);
+  const supplyAlerts = [];
+
+  if (dueSupplies.length > 0) {
+    const people = await getAllPeople();
+    for (const supply of dueSupplies) {
+      const emptyDate = new Date(supply.last_restocked + 'T00:00:00');
+      emptyDate.setDate(emptyDate.getDate() + supply.days_duration);
+      const daysLeft = Math.max(0, Math.round((emptyDate.getTime() - new Date(today + 'T00:00:00').getTime()) / (1000 * 60 * 60 * 24)));
+      const msg = daysLeft === 0
+        ? `Running low on ${supply.name}! It's empty!`
+        : `Running low on ${supply.name}! ~${daysLeft} days left`;
+
+      for (const person of people) {
+        await sendNotification(person.ntfy_topic, 'Supply Alert', msg);
+      }
+      await markSupplyAlerted(supply.id, today);
+      supplyAlerts.push({ supply: supply.name, daysLeft });
+    }
+  }
+
   return NextResponse.json({
     message: `Reminded ${results.length} people`,
     reminded: results.length,
     results,
+    supplyAlerts,
   });
 }

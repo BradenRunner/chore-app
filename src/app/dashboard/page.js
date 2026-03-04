@@ -27,9 +27,10 @@ export default function Dashboard() {
   const [schedAmPm, setSchedAmPm] = useState('PM');
   const [expandedSchedule, setExpandedSchedule] = useState(null);
   const [schedMsgEdits, setSchedMsgEdits] = useState({});
+  const [supplies, setSupplies] = useState([]);
 
   async function fetchAll() {
-    const [statusRes, choresRes, peopleRes, historyRes, rewardsRes, punishRes, schedRes] = await Promise.all([
+    const [statusRes, choresRes, peopleRes, historyRes, rewardsRes, punishRes, schedRes, suppliesRes] = await Promise.all([
       fetch('/api/status'),
       fetch('/api/chores'),
       fetch('/api/people'),
@@ -37,6 +38,7 @@ export default function Dashboard() {
       fetch('/api/rewards'),
       fetch('/api/punishment-items'),
       fetch('/api/notification-schedule'),
+      fetch('/api/supplies'),
     ]);
     setStatus(await statusRes.json());
     setChores(await choresRes.json());
@@ -46,6 +48,7 @@ export default function Dashboard() {
     setRewards(await rewardsRes.json());
     setPunishmentItems(await punishRes.json());
     setSchedule(await schedRes.json());
+    setSupplies(await suppliesRes.json());
   }
 
   useEffect(() => {
@@ -304,6 +307,9 @@ export default function Dashboard() {
         <a href="/rewards" className="dash-nav-item">
           <span className="dash-nav-icon">&#127873;</span> Rewards
         </a>
+        <a href="/supplies" className="dash-nav-item">
+          <span className="dash-nav-icon">&#128230;</span> Supplies
+        </a>
         <a href="/dashboard" className="dash-nav-item active">
           <span className="dash-nav-icon">&#128202;</span> Dashboard
         </a>
@@ -337,6 +343,12 @@ export default function Dashboard() {
             <div className="dash-stat-card">
               <div className="dash-stat-value" style={{ color: '#f59e0b' }}>{skipped}</div>
               <div className="dash-stat-label">Skipped</div>
+            </div>
+            <div className="dash-stat-card">
+              <div className="dash-stat-value" style={{ color: '#f97316' }}>
+                {Array.isArray(supplies) ? supplies.filter((s) => s.daysRemaining / s.days_duration < 0.25).length : 0}
+              </div>
+              <div className="dash-stat-label">Low Supplies</div>
             </div>
           </div>
 
