@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function Home() {
   const [people, setPeople] = useState([]);
-  const [chores, setChores] = useState([]);
   const [user, setUser] = useState(null);
   const [pinTarget, setPinTarget] = useState(null);
   const [pin, setPin] = useState('');
@@ -12,9 +11,12 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [statusData, setStatusData] = useState(null);
-  const [showSkip, setShowSkip] = useState(false);
-  const [skipText, setSkipText] = useState('');
-  const [skipSubmitting, setSkipSubmitting] = useState(false);
+  const [supplies, setSupplies] = useState([]);
+  // Meals state
+  const [meals, setMeals] = useState([]);
+  const [showAddMeal, setShowAddMeal] = useState(false);
+  const [mealName, setMealName] = useState('');
+  const [mealLink, setMealLink] = useState('');
   // Punishment wheel state
   const [showWheel, setShowWheel] = useState(false);
   const [punishmentItems, setPunishmentItems] = useState([]);
@@ -57,7 +59,8 @@ export default function Home() {
       }
     }
     fetchStatus();
-    fetchChores();
+    fetchSupplies();
+    fetchMeals();
   }, [fetchStatus]);
 
   // Fetch pending votes on login and poll every 15s
@@ -102,10 +105,47 @@ export default function Home() {
     drawWheel(canvasRef.current, punishmentItems);
   }, [showWheel, punishmentItems]);
 
-  async function fetchChores() {
-    const res = await fetch('/api/chores');
-    const data = await res.json();
-    setChores(data);
+  async function fetchSupplies() {
+    try {
+      const res = await fetch('/api/supplies');
+      const data = await res.json();
+      setSupplies(Array.isArray(data) ? data : []);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function fetchMeals() {
+    try {
+      const res = await fetch('/api/meals');
+      const data = await res.json();
+      setMeals(Array.isArray(data) ? data : []);
+    } catch {
+      // ignore
+    }
+  }
+
+  async function handleAddMeal(e) {
+    e.preventDefault();
+    if (!mealName.trim()) return;
+    await fetch('/api/meals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: mealName.trim(), link: mealLink.trim() || null, addedBy: user?.personId }),
+    });
+    setMealName('');
+    setMealLink('');
+    setShowAddMeal(false);
+    fetchMeals();
+  }
+
+  async function handleDeleteMeal(id) {
+    await fetch('/api/meals', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    fetchMeals();
   }
 
   async function handlePersonTap(person) {
@@ -143,45 +183,10 @@ export default function Home() {
   function handleLogout() {
     localStorage.removeItem('choreUser');
     setUser(null);
-    setShowSkip(false);
-    setSkipText('');
     setShowWheel(false);
     setWheelResult(null);
     setWheelChecked(false);
     setPendingVotes([]);
-  }
-
-  async function handleChoreSelect(choreName) {
-    if (!user || submitting) return;
-
-    setSubmitting(true);
-    const res = await fetch('/api/complete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personId: user.personId, description: choreName }),
-    });
-
-    if (res.ok) {
-      await fetchStatus();
-    }
-    setSubmitting(false);
-  }
-
-  async function handleSkipSubmit(e) {
-    e.preventDefault();
-    if (!skipText.trim() || !user) return;
-    setSkipSubmitting(true);
-
-    await fetch('/api/skip', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ personId: user.personId, reason: skipText.trim() }),
-    });
-
-    setSkipText('');
-    setShowSkip(false);
-    setSkipSubmitting(false);
-    await fetchStatus();
   }
 
   async function handleVote(skipReasonId, vote) {
@@ -390,90 +395,128 @@ export default function Home() {
         </div>
       )}
 
-      {/* Everything below is hidden while votes are pending */}
-      {pendingVotes.length === 0 && <>
+      {/* Dashboard — shown after votes are cleared */}
+      {pendingVotes.length === 0 && myStatus && (() => {
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+        const lowSupplies = supplies.filter((s) => {
+          if (!s.days_duration || s.days_duration === 0) return false;
+          return (s.daysRemaining / s.days_duration) < 0.5;
+        });
+        return (
+          <div className="phone-dashboard">
+            <p className="phone-dash-greeting">{greeting}, {user.name}!</p>
 
-      {/* Today's completions */}
-      {myStatus && myStatus.completions.length > 0 && (
-        <div className="today-completions">
-          <h3>Done today</h3>
-          <ul>
-            {myStatus.completions.map((c) => (
-              <li key={c.id}>{c.description}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {/* Skip display */}
-      {myStatus && myStatus.skipReason && (
-        <div className={`skip-display${myStatus.skipVoteResult === 'invalid' ? ' skip-rejected' : ''}`}>
-          <p>Skipping today: {myStatus.skipReason}</p>
-          <p className={`skip-vote-status ${myStatus.skipVoteResult || 'pending'}`}>
-            {!myStatus.skipVoteResult && 'Waiting for votes...'}
-            {myStatus.skipVoteResult === 'valid' && 'Skip approved!'}
-            {myStatus.skipVoteResult === 'invalid' && 'Skip rejected'}
-          </p>
-        </div>
-      )}
-
-      {/* Chore grid — always visible so they can add more */}
-      <div className="chore-grid">
-        {chores.map((chore) => (
-          <button
-            key={chore.id}
-            className="chore-btn"
-            onClick={() => handleChoreSelect(chore.name)}
-            disabled={submitting}
-          >
-            {chore.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Rewards link */}
-      <button
-        className="rewards-link-btn"
-        onClick={() => window.location.href = '/rewards'}
-      >
-        Rewards Shop
-      </button>
-
-      {/* Skip section */}
-      <div className="skip-section">
-        {!showSkip ? (
-          <button className="skip-toggle" onClick={() => setShowSkip(true)}>
-            Can&apos;t do chores today?
-          </button>
-        ) : (
-          <form className="skip-form" onSubmit={handleSkipSubmit}>
-            <textarea
-              value={skipText}
-              onChange={(e) => setSkipText(e.target.value)}
-              placeholder="Why can't you do chores today?"
-              rows={2}
-            />
-            <div className="skip-form-actions">
-              <button type="submit" disabled={!skipText.trim() || skipSubmitting}>
-                Submit
-              </button>
-              <button type="button" onClick={() => { setShowSkip(false); setSkipText(''); }}>
-                Cancel
-              </button>
+            {/* Stat cards */}
+            <div className="phone-dash-cards">
+              <a href="/chores" className="phone-dash-card green phone-dash-card-link">
+                <div className="phone-dash-label">Chores Today</div>
+                <div className="phone-dash-value">{myStatus.completions.length}</div>
+                <div className="phone-dash-sub">{myStatus.completions.length === 0 ? 'Tap to start' : `${myStatus.completions.length} completed`}</div>
+              </a>
+              <a href="/rewards" className="phone-dash-card amber phone-dash-card-link">
+                <div className="phone-dash-label">Tokens</div>
+                <div className="phone-dash-value">{myStatus.token_balance || 0}</div>
+                <div className="phone-dash-sub">Tap to spend</div>
+              </a>
+              <div className="phone-dash-card pink">
+                <div className="phone-dash-label">Streak</div>
+                <div className="phone-dash-value">{myStatus.streak || 0}</div>
+                <div className="phone-dash-sub">{myStatus.streak ? `${myStatus.streak} day${myStatus.streak !== 1 ? 's' : ''}` : 'Start today!'}</div>
+              </div>
             </div>
-          </form>
-        )}
-      </div>
 
-      {/* ntfy info */}
-      {myStatus && (
-        <div className="ntfy-info">
-          <p>Get reminders: install the <strong>ntfy app</strong> and subscribe to:</p>
-          <code>{myStatus.ntfy_topic}</code>
-        </div>
-      )}
+            {/* Skip status */}
+            {myStatus.skipReason && (
+              <div className={`skip-display${myStatus.skipVoteResult === 'invalid' ? ' skip-rejected' : ''}`}>
+                <p>Skipping today: {myStatus.skipReason}</p>
+                <p className={`skip-vote-status ${myStatus.skipVoteResult || 'pending'}`}>
+                  {!myStatus.skipVoteResult && 'Waiting for votes...'}
+                  {myStatus.skipVoteResult === 'valid' && 'Skip approved!'}
+                  {myStatus.skipVoteResult === 'invalid' && 'Skip rejected'}
+                </p>
+              </div>
+            )}
 
-      </>}
+            {/* Supplies */}
+            {supplies.length > 0 && (
+              <div className="phone-dash-supplies">
+                <div className="phone-dash-supplies-title">Supplies</div>
+                {supplies.map((s) => {
+                  const pct = s.days_duration ? Math.max(0, Math.min(100, (s.daysRemaining / s.days_duration) * 100)) : 0;
+                  const status = pct === 0 ? 'critical' : pct < 25 ? 'critical' : pct < 50 ? 'warning' : 'ok';
+                  return (
+                    <div key={s.id} className="phone-dash-supply-item">
+                      <div className="phone-dash-supply-row">
+                        <span className="phone-dash-supply-name">{s.name}</span>
+                        <span className={`phone-dash-supply-days ${status}`}>
+                          {s.daysRemaining === 0 ? 'EMPTY' : `${s.daysRemaining}d left`}
+                        </span>
+                      </div>
+                      <div className="phone-dash-supply-bar">
+                        <div className={`phone-dash-supply-fill ${status}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Meals This Week */}
+            <div className="phone-dash-meals">
+              <div className="phone-dash-meals-title">Meals This Week</div>
+              {meals.length === 0 && !showAddMeal && (
+                <p className="phone-dash-meals-empty">No meals planned yet.</p>
+              )}
+              {meals.map((meal) => (
+                <div key={meal.id} className="phone-dash-meal-item">
+                  <div className="phone-dash-meal-name">
+                    {meal.link ? (
+                      <a href={meal.link} target="_blank" rel="noopener noreferrer" className="phone-dash-meal-link">
+                        {meal.name}
+                      </a>
+                    ) : (
+                      <span>{meal.name}</span>
+                    )}
+                  </div>
+                  <button
+                    className="phone-dash-meal-delete"
+                    onClick={() => handleDeleteMeal(meal.id)}
+                  >
+                    &times;
+                  </button>
+                </div>
+              ))}
+              {showAddMeal ? (
+                <form onSubmit={handleAddMeal} className="phone-dash-meal-form">
+                  <input
+                    type="text"
+                    placeholder="Meal name"
+                    value={mealName}
+                    onChange={(e) => setMealName(e.target.value)}
+                    autoFocus
+                  />
+                  <input
+                    type="url"
+                    placeholder="Recipe link (optional)"
+                    value={mealLink}
+                    onChange={(e) => setMealLink(e.target.value)}
+                  />
+                  <div className="phone-dash-meal-form-actions">
+                    <button type="submit" disabled={!mealName.trim()}>Save</button>
+                    <button type="button" onClick={() => { setShowAddMeal(false); setMealName(''); setMealLink(''); }}>Cancel</button>
+                  </div>
+                </form>
+              ) : (
+                <button className="phone-dash-meal-add-btn" onClick={() => setShowAddMeal(true)}>
+                  + Add Meal
+                </button>
+              )}
+            </div>
+
+          </div>
+        );
+      })()}
     </div>
   );
 }

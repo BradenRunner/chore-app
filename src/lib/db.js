@@ -647,6 +647,40 @@ export async function markSupplyAlerted(id, dateStr) {
   if (error) throw error;
 }
 
+// ---- Meal Functions ----
+
+export async function getMealsForWeek(weekOf) {
+  const { data, error } = await supabase
+    .from('meals')
+    .select('*')
+    .eq('week_of', weekOf)
+    .order('created_at');
+  if (error) throw error;
+  return data;
+}
+
+export async function addMeal(name, link, weekOf, addedBy) {
+  const row = { name, week_of: weekOf };
+  if (link) row.link = link;
+  if (addedBy) row.added_by = addedBy;
+  const { error } = await supabase.from('meals').insert(row);
+  if (error) throw error;
+}
+
+export async function updateMeal(id, fields) {
+  const updates = {};
+  if (fields.name !== undefined) updates.name = fields.name;
+  if (fields.link !== undefined) updates.link = fields.link;
+  if (Object.keys(updates).length === 0) return;
+  const { error } = await supabase.from('meals').update(updates).eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteMeal(id) {
+  const { error } = await supabase.from('meals').delete().eq('id', id);
+  if (error) throw error;
+}
+
 export async function logPunishment(personId, punishmentItemId, dateStr) {
   // Look up punishment item
   const { data: item, error: iErr } = await supabase
