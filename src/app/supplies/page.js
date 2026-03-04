@@ -6,7 +6,7 @@ export default function SuppliesPage() {
   const [supplies, setSupplies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState('');
-  const [daysDuration, setDaysDuration] = useState('');
+  const [daysDuration, setDaysDuration] = useState('30');
   const [alertDaysBefore, setAlertDaysBefore] = useState('3');
   const [alertIntervalDays, setAlertIntervalDays] = useState('1');
   const [editingId, setEditingId] = useState(null);
@@ -37,7 +37,7 @@ export default function SuppliesPage() {
       }),
     });
     setName('');
-    setDaysDuration('');
+    setDaysDuration('30');
     setAlertDaysBefore('3');
     setAlertIntervalDays('1');
     fetchSupplies();
