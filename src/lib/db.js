@@ -679,6 +679,7 @@ export async function updateMeal(id, fields) {
   const updates = {};
   if (fields.name !== undefined) updates.name = fields.name;
   if (fields.link !== undefined) updates.link = fields.link;
+  if (fields.cooked !== undefined) updates.cooked = fields.cooked;
   if (Object.keys(updates).length === 0) return;
   const { error } = await supabase.from('meals').update(updates).eq('id', id);
   if (error) throw error;

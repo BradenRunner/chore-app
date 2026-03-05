@@ -148,6 +148,15 @@ export default function Home() {
     fetchMeals();
   }
 
+  async function handleToggleMealCooked(meal) {
+    await fetch('/api/meals', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: meal.id, cooked: !meal.cooked }),
+    });
+    fetchMeals();
+  }
+
   async function handlePersonTap(person) {
     setPinTarget(person);
     setPin('');
@@ -469,8 +478,14 @@ export default function Home() {
                 <p className="phone-dash-meals-empty">No meals planned yet.</p>
               )}
               {meals.map((meal) => (
-                <div key={meal.id} className="phone-dash-meal-item">
-                  <div className="phone-dash-meal-name">
+                <div key={meal.id} className={`phone-dash-meal-item${meal.cooked ? ' cooked' : ''}`}>
+                  <button
+                    className={`phone-dash-meal-check${meal.cooked ? ' checked' : ''}`}
+                    onClick={() => handleToggleMealCooked(meal)}
+                  >
+                    {meal.cooked ? '\u2705' : '\u25CB'}
+                  </button>
+                  <div className={`phone-dash-meal-name${meal.cooked ? ' cooked' : ''}`}>
                     {meal.link ? (
                       <a href={meal.link} target="_blank" rel="noopener noreferrer" className="phone-dash-meal-link">
                         {meal.name}

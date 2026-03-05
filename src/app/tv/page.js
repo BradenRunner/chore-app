@@ -16,7 +16,6 @@ export default function TVDashboard() {
     const suppliesData = await suppliesRes.json();
     setSupplies(Array.isArray(suppliesData) ? suppliesData : []);
 
-    // Meals table may not exist yet
     try {
       const mealsRes = await fetch('/api/meals');
       const mealsData = await mealsRes.json();
@@ -148,8 +147,9 @@ export default function TVDashboard() {
           ) : (
             <div className="tv-meal-list">
               {meals.map((m) => (
-                <div key={m.id} className="tv-meal-item">
-                  <span className="tv-meal-name">
+                <div key={m.id} className={`tv-meal-item${m.cooked ? ' cooked' : ''}`}>
+                  <span className="tv-meal-status">{m.cooked ? '\u2705' : '\u25CB'}</span>
+                  <span className={`tv-meal-name${m.cooked ? ' cooked' : ''}`}>
                     {m.link ? <a href={m.link} target="_blank" rel="noopener noreferrer">{m.name}</a> : m.name}
                   </span>
                 </div>

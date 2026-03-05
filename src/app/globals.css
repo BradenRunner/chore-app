@@ -325,6 +325,24 @@ body {
   background: var(--bg);
   border-radius: 10px;
   border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tv-meal-item.cooked {
+  opacity: 0.5;
+}
+
+.tv-meal-status {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.tv-meal-name.cooked,
+.tv-meal-name.cooked a {
+  text-decoration: line-through;
+  color: var(--text-muted);
 }
 
 .tv-meal-name {
@@ -2195,6 +2213,37 @@ body {
 
 .phone-dash-meal-link:hover {
   text-decoration: underline;
+}
+
+.phone-dash-meal-check {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  color: var(--text-muted);
+  padding: 0;
+}
+
+.phone-dash-meal-check.checked {
+  color: var(--green);
+}
+
+.phone-dash-meal-item.cooked {
+  opacity: 0.6;
+}
+
+.phone-dash-meal-name.cooked span,
+.phone-dash-meal-name.cooked a {
+  text-decoration: line-through;
+  color: var(--text-muted);
 }
 
 .phone-dash-meal-delete {
