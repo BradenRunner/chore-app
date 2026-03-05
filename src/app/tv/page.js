@@ -4,16 +4,31 @@ import { useState, useEffect } from 'react';
 
 export default function TVDashboard() {
   const [data, setData] = useState(null);
+  const [supplies, setSupplies] = useState([]);
+  const [meals, setMeals] = useState([]);
 
-  async function fetchStatus() {
-    const res = await fetch('/api/status');
-    const json = await res.json();
-    setData(json);
+  async function fetchAll() {
+    const [statusRes, suppliesRes] = await Promise.all([
+      fetch('/api/status'),
+      fetch('/api/supplies'),
+    ]);
+    setData(await statusRes.json());
+    const suppliesData = await suppliesRes.json();
+    setSupplies(Array.isArray(suppliesData) ? suppliesData : []);
+
+    // Meals table may not exist yet
+    try {
+      const mealsRes = await fetch('/api/meals');
+      const mealsData = await mealsRes.json();
+      setMeals(Array.isArray(mealsData) ? mealsData : []);
+    } catch {
+      setMeals([]);
+    }
   }
 
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 60000);
+    fetchAll();
+    const interval = setInterval(fetchAll, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -61,6 +76,13 @@ export default function TVDashboard() {
     return 'Not yet...';
   }
 
+  function getSupplyStatus(s) {
+    const pct = s.daysRemaining / s.days_duration;
+    if (pct > 0.5) return 'ok';
+    if (pct > 0.25) return 'warning';
+    return 'critical';
+  }
+
   return (
     <div className="tv-container">
       <h1>Chore Tracker</h1>
@@ -86,6 +108,55 @@ export default function TVDashboard() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Bottom row: Supplies + Meals side by side */}
+      <div className="tv-bottom-row">
+        {/* Supplies */}
+        <div className="tv-panel">
+          <h2>Supplies</h2>
+          {supplies.length === 0 ? (
+            <p className="tv-panel-empty">No supplies tracked</p>
+          ) : (
+            <div className="tv-supply-list">
+              {supplies.map((s) => {
+                const status = getSupplyStatus(s);
+                return (
+                  <div key={s.id} className={`tv-supply-item ${status}`}>
+                    <div className="tv-supply-top">
+                      <span className="tv-supply-name">{s.name}</span>
+                      <span className={`tv-supply-days ${status}`}>{s.daysRemaining}d left</span>
+                    </div>
+                    <div className="tv-supply-bar">
+                      <div
+                        className={`tv-supply-fill ${status}`}
+                        style={{ width: `${Math.max(0, Math.min(100, (s.daysRemaining / s.days_duration) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Meals */}
+        <div className="tv-panel">
+          <h2>Meals This Week</h2>
+          {meals.length === 0 ? (
+            <p className="tv-panel-empty">No meals planned</p>
+          ) : (
+            <div className="tv-meal-list">
+              {meals.map((m) => (
+                <div key={m.id} className="tv-meal-item">
+                  <span className="tv-meal-name">
+                    {m.link ? <a href={m.link} target="_blank" rel="noopener noreferrer">{m.name}</a> : m.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -398,6 +398,14 @@ export async function updateChoreTokenValue(id, tokenValue) {
   if (error) throw error;
 }
 
+export async function updateChoreName(id, name) {
+  const { error } = await supabase
+    .from('chores')
+    .update({ name })
+    .eq('id', id);
+  if (error) throw error;
+}
+
 // ---- Rewards Functions ----
 
 export async function getAllRewards() {
@@ -715,4 +723,62 @@ export async function logPunishment(personId, punishmentItemId, dateStr) {
   if (logErr) throw logErr;
 
   return { punishment: item.name, deduction };
+}
+
+// ---- House Zone Functions ----
+
+export async function getAllZones() {
+  const { data, error } = await supabase
+    .from('house_zones')
+    .select('*')
+    .order('sort_order');
+  if (error) throw error;
+  return data;
+}
+
+export async function updateZoneGridCells(id, gridCells) {
+  const { error } = await supabase
+    .from('house_zones')
+    .update({ grid_cells: gridCells })
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function getLatestZoneCompletions(choreType) {
+  const { data: zones, error: zErr } = await supabase
+    .from('house_zones')
+    .select('*')
+    .order('sort_order');
+  if (zErr) throw zErr;
+
+  const { data: completions, error: cErr } = await supabase
+    .from('zone_completions')
+    .select('zone_id, date')
+    .eq('chore_type', choreType)
+    .order('date', { ascending: false });
+  if (cErr) throw cErr;
+
+  // Build map of zone_id -> most recent date
+  const latestMap = {};
+  for (const c of completions) {
+    if (!latestMap[c.zone_id]) {
+      latestMap[c.zone_id] = c.date;
+    }
+  }
+
+  return zones.map((z) => ({
+    ...z,
+    lastCleaned: latestMap[z.id] || null,
+  }));
+}
+
+export async function logZoneCompletions(zoneIds, choreType, personId, dateStr) {
+  const rows = zoneIds.map((zoneId) => ({
+    zone_id: zoneId,
+    chore_type: choreType,
+    person_id: personId,
+    date: dateStr,
+  }));
+  const { error } = await supabase.from('zone_completions').insert(rows);
+  if (error) throw error;
 }

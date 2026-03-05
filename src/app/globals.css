@@ -236,6 +236,111 @@ body {
   color: var(--accent);
 }
 
+/* TV Bottom Row: Supplies + Meals */
+.tv-bottom-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tv-panel {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 32px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.tv-panel h2 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.tv-panel-empty {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+}
+
+/* TV Supplies */
+.tv-supply-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tv-supply-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tv-supply-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tv-supply-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.tv-supply-days {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.tv-supply-days.ok { color: #22c55e; }
+.tv-supply-days.warning { color: #f59e0b; }
+.tv-supply-days.critical { color: #ef4444; }
+
+.tv-supply-bar {
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.tv-supply-fill {
+  height: 100%;
+  border-radius: 5px;
+  transition: width 0.3s;
+}
+
+.tv-supply-fill.ok { background: #22c55e; }
+.tv-supply-fill.warning { background: #f59e0b; }
+.tv-supply-fill.critical { background: #ef4444; }
+
+/* TV Meals */
+.tv-meal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tv-meal-item {
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.tv-meal-name {
+  font-size: 1.15rem;
+  font-weight: 500;
+}
+
+.tv-meal-name a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.tv-meal-name a:hover {
+  text-decoration: underline;
+}
+
 .loading {
   display: flex;
   align-items: center;
@@ -1291,6 +1396,34 @@ body {
   margin-top: 4px;
 }
 
+.dash-layout .chore-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.dash-layout .chore-edit-row input[type="text"] {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #1e293b;
+  background: #fff;
+}
+
+.dash-layout .chore-edit-row input[type="number"] {
+  width: 70px;
+  padding: 6px 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: #1e293b;
+  background: #fff;
+  text-align: center;
+}
+
 .dash-layout .chore-token-editor {
   display: flex;
   align-items: center;
@@ -2176,4 +2309,283 @@ body {
 .dash-layout .dash-add-form select:focus {
   border-color: #3b82f6;
   box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+/* ============================
+   Zone Overlay (Chores Page)
+   ============================ */
+.zone-overlay {
+  position: fixed;
+  inset: 0;
+  background: #111;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 12px;
+  overflow-y: auto;
+}
+
+.zone-overlay-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.zone-overlay-header h2 {
+  color: #fff;
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.zone-overlay-header p {
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* Room card grid */
+.zone-room-grid {
+  width: 100%;
+  max-width: 440px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.zone-room-card {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.zone-room-color-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 14px 14px 0 0;
+}
+
+.zone-room-name {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  padding-top: 2px;
+}
+
+.zone-room-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.zone-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  transition: all 0.15s;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.zone-action-btn.zone-fresh .zone-action-dot {
+  background: #22c55e;
+}
+
+.zone-action-btn.zone-aging .zone-action-dot {
+  background: #f59e0b;
+}
+
+.zone-action-btn.zone-overdue .zone-action-dot {
+  background: #ef4444;
+}
+
+.zone-action-btn.selected {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.zone-action-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Footer: legend + buttons */
+.zone-overlay-footer {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.zone-legend {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+.zone-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zone-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.zone-dot.zone-fresh {
+  background: #22c55e;
+}
+
+.zone-dot.zone-aging {
+  background: #f59e0b;
+}
+
+.zone-dot.zone-overdue {
+  background: #ef4444;
+}
+
+.zone-submit-btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #22c55e;
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.zone-submit-btn:hover {
+  background: #16a34a;
+}
+
+.zone-submit-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zone-cancel-btn {
+  padding: 10px 24px;
+  border: 1px solid #94a3b8;
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.zone-cancel-btn:hover {
+  border-color: #fff;
+  color: #fff;
+}
+
+/* ============================
+   Zone Editor (Dashboard)
+   ============================ */
+.zone-brush-palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.zone-brush-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e293b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.zone-brush-btn:hover {
+  border-color: var(--zone-color);
+}
+
+.zone-brush-btn.active {
+  border-color: var(--zone-color);
+  background: color-mix(in srgb, var(--zone-color) 10%, white);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--zone-color) 30%, transparent);
+}
+
+.zone-brush-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.zone-editor-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 4px;
+  overflow-x: auto;
+}
+
+.zone-editor-row {
+  display: flex;
+  gap: 2px;
+}
+
+.zone-editor-cell {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  transition: all 0.1s;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.zone-editor-cell:hover {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+.zone-editor-cell.painted {
+  border-color: transparent;
 }

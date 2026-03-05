@@ -20,6 +20,8 @@ export default function Dashboard() {
   const [newPunishDeduction, setNewPunishDeduction] = useState('0');
   // Inline token editors: { [choreId]: value }
   const [tokenEdits, setTokenEdits] = useState({});
+  // Inline chore editing: { id, name, token_value }
+  const [editingChore, setEditingChore] = useState(null);
   // Notification schedule
   const [schedule, setSchedule] = useState([]);
   const [schedHour, setSchedHour] = useState('6');
@@ -28,6 +30,8 @@ export default function Dashboard() {
   const [expandedSchedule, setExpandedSchedule] = useState(null);
   const [schedMsgEdits, setSchedMsgEdits] = useState({});
   const [supplies, setSupplies] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [activeBrush, setActiveBrush] = useState(null);
 
   async function fetchAll() {
     const [statusRes, choresRes, peopleRes, historyRes, rewardsRes, punishRes, schedRes, suppliesRes] = await Promise.all([
@@ -50,6 +54,11 @@ export default function Dashboard() {
     setSchedule(await schedRes.json());
     const suppliesData = await suppliesRes.json();
     setSupplies(Array.isArray(suppliesData) ? suppliesData : []);
+    // Fetch zones
+    try {
+      const zonesRes = await fetch('/api/zones');
+      setZones(await zonesRes.json());
+    } catch { setZones([]); }
   }
 
   useEffect(() => {
@@ -76,6 +85,26 @@ export default function Dashboard() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id }),
     });
+    fetchAll();
+  }
+
+  async function handleSaveChoreEdit() {
+    if (!editingChore || !editingChore.name.trim()) return;
+    const res = await fetch('/api/chores', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: editingChore.id,
+        name: editingChore.name.trim(),
+        token_value: Number(editingChore.token_value),
+      }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert('Error saving: ' + (data.error || 'Unknown error'));
+      return;
+    }
+    setEditingChore(null);
     fetchAll();
   }
 
@@ -239,6 +268,42 @@ export default function Dashboard() {
     }
   }
 
+  async function handleZoneCellClick(row, col) {
+    if (!activeBrush) return;
+    const zone = zones.find((z) => z.id === activeBrush);
+    if (!zone) return;
+
+    const cells = zone.grid_cells || [];
+    const existing = cells.findIndex((c) => c.row === row && c.col === col);
+
+    // Check if another zone owns this cell
+    const otherZone = zones.find((z) => z.id !== activeBrush && (z.grid_cells || []).some((c) => c.row === row && c.col === col));
+    if (otherZone) {
+      const otherCells = otherZone.grid_cells.filter((c) => !(c.row === row && c.col === col));
+      await fetch('/api/zones', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: otherZone.id, grid_cells: otherCells }),
+      });
+    }
+
+    let newCells;
+    if (existing >= 0) {
+      newCells = cells.filter((_, i) => i !== existing);
+    } else {
+      newCells = [...cells, { row, col }];
+    }
+
+    await fetch('/api/zones', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: activeBrush, grid_cells: newCells }),
+    });
+
+    const zonesRes = await fetch('/api/zones');
+    setZones(await zonesRes.json());
+  }
+
   async function handleSaveScheduleMessage(id) {
     await fetch('/api/notification-schedule', {
       method: 'PUT',
@@ -378,22 +443,35 @@ export default function Dashboard() {
             <div className="dash-list">
               {chores.map((chore) => (
                 <div key={chore.id} className="dash-list-item">
-                  <span>{chore.name}</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div className="chore-token-editor">
+                  {editingChore && editingChore.id === chore.id ? (
+                    <div className="chore-edit-row">
+                      <input
+                        type="text"
+                        value={editingChore.name}
+                        onChange={(e) => setEditingChore((prev) => ({ ...prev, name: e.target.value }))}
+                        placeholder="Chore name"
+                      />
                       <input
                         type="number"
                         min="0"
-                        value={tokenEdits[chore.id] !== undefined ? tokenEdits[chore.id] : chore.token_value}
-                        onChange={(e) => setTokenEdits((prev) => ({ ...prev, [chore.id]: e.target.value }))}
+                        value={editingChore.token_value}
+                        onChange={(e) => setEditingChore((prev) => ({ ...prev, token_value: e.target.value }))}
+                        style={{ maxWidth: 70 }}
                       />
-                      {tokenEdits[chore.id] !== undefined && (
-                        <button onClick={() => handleUpdateTokenValue(chore.id)}>Save</button>
-                      )}
+                      <span className="chore-token-label">tokens</span>
+                      <button className="dash-edit-btn" onClick={handleSaveChoreEdit}>Save</button>
+                      <button className="dash-delete-btn" onClick={() => setEditingChore(null)}>Cancel</button>
                     </div>
-                    <span className="chore-token-label">tokens</span>
-                    <button className="dash-delete-btn" onClick={() => handleDeleteChore(chore.id)}>Remove</button>
-                  </div>
+                  ) : (
+                    <>
+                      <span>{chore.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="chore-token-label">{chore.token_value} tokens</span>
+                        <button className="dash-edit-btn" onClick={() => setEditingChore({ id: chore.id, name: chore.name, token_value: chore.token_value })}>Edit</button>
+                        <button className="dash-delete-btn" onClick={() => handleDeleteChore(chore.id)}>Remove</button>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -607,6 +685,47 @@ export default function Dashboard() {
               />
               <button type="submit">Add</button>
             </form>
+          </section>
+
+          {/* House Zones */}
+          <section className="dash-section">
+            <h2>House Zones</h2>
+            <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: 12 }}>
+              Select a room brush, then click grid cells to paint your floor plan.
+            </p>
+            <div className="zone-brush-palette">
+              {zones.map((z) => (
+                <button
+                  key={z.id}
+                  className={`zone-brush-btn${activeBrush === z.id ? ' active' : ''}`}
+                  style={{ '--zone-color': z.color }}
+                  onClick={() => setActiveBrush(activeBrush === z.id ? null : z.id)}
+                >
+                  <span className="zone-brush-swatch" style={{ background: z.color }} />
+                  {z.name}
+                </button>
+              ))}
+            </div>
+            <div className="zone-editor-grid">
+              {Array.from({ length: 10 }, (_, row) => (
+                <div key={row} className="zone-editor-row">
+                  {Array.from({ length: 12 }, (_, col) => {
+                    const zone = zones.find((z) => (z.grid_cells || []).some((c) => c.row === row && c.col === col));
+                    return (
+                      <div
+                        key={col}
+                        className={`zone-editor-cell${zone ? ' painted' : ''}`}
+                        style={zone ? { background: zone.color } : undefined}
+                        onClick={() => handleZoneCellClick(row, col)}
+                        title={zone ? zone.name : `${row},${col}`}
+                      >
+                        {zone ? zone.name[0] : ''}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </section>
 
           {/* Recent History */}
