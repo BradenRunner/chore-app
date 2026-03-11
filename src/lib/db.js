@@ -726,6 +726,22 @@ export async function logPunishment(personId, punishmentItemId, dateStr) {
   return { punishment: item.name, deduction };
 }
 
+export async function getRecentRedemptions(limit = 10) {
+  const { data, error } = await supabase
+    .from('reward_redemptions')
+    .select('*, people(name), rewards(name)')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data.map((r) => ({
+    id: r.id,
+    personName: r.people?.name,
+    rewardName: r.rewards?.name,
+    tokenCost: r.token_cost,
+    createdAt: r.created_at,
+  }));
+}
+
 // ---- House Zone Functions ----
 
 export async function getAllZones() {

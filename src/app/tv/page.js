@@ -6,6 +6,7 @@ export default function TVDashboard() {
   const [data, setData] = useState(null);
   const [supplies, setSupplies] = useState([]);
   const [meals, setMeals] = useState([]);
+  const [redemptions, setRedemptions] = useState([]);
 
   async function fetchAll() {
     const [statusRes, suppliesRes] = await Promise.all([
@@ -22,6 +23,14 @@ export default function TVDashboard() {
       setMeals(Array.isArray(mealsData) ? mealsData : []);
     } catch {
       setMeals([]);
+    }
+
+    try {
+      const redRes = await fetch('/api/rewards/redemptions');
+      const redData = await redRes.json();
+      setRedemptions(Array.isArray(redData) ? redData : []);
+    } catch {
+      setRedemptions([]);
     }
   }
 
@@ -109,7 +118,6 @@ export default function TVDashboard() {
         ))}
       </div>
 
-      {/* Bottom row: Supplies + Meals side by side */}
       <div className="tv-bottom-row">
         {/* Supplies */}
         <div className="tv-panel">
@@ -152,6 +160,24 @@ export default function TVDashboard() {
                   <span className={`tv-meal-name${m.cooked ? ' cooked' : ''}`}>
                     {m.link ? <a href={m.link} target="_blank" rel="noopener noreferrer">{m.name}</a> : m.name}
                   </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Recent Redemptions */}
+        <div className="tv-panel">
+          <h2>Recent Redemptions</h2>
+          {redemptions.length === 0 ? (
+            <p className="tv-panel-empty">No redemptions yet</p>
+          ) : (
+            <div className="tv-redemption-list">
+              {redemptions.map((r) => (
+                <div key={r.id} className="tv-redemption-item">
+                  <span className="tv-redemption-name">{r.personName}</span>
+                  <span className="tv-redemption-reward">{r.rewardName}</span>
+                  <span className="tv-redemption-cost">-{r.tokenCost}</span>
                 </div>
               ))}
             </div>

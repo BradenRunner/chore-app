@@ -239,7 +239,7 @@ body {
 /* TV Bottom Row: Supplies + Meals */
 .tv-bottom-row {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 24px;
   max-width: 1200px;
   margin: 0 auto;
@@ -357,6 +357,41 @@ body {
 
 .tv-meal-name a:hover {
   text-decoration: underline;
+}
+
+/* TV Redemptions */
+.tv-redemption-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tv-redemption-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.tv-redemption-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.tv-redemption-reward {
+  flex: 1;
+  font-size: 1rem;
+  color: var(--text-muted);
+}
+
+.tv-redemption-cost {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f59e0b;
 }
 
 .loading {
